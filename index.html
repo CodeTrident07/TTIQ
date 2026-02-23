@@ -1,0 +1,3263 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TT IQ — Table Tennis Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet"/>
+<style>
+/* ══ TOKENS ══ */
+:root {
+  --bg:     #07090f;
+  --bg-s:   #0d1018;
+  --bg-e:   #131720;
+  --bdr:    #1c2133;
+  --bdr-l:  #252d42;
+  --txt:    #e4e9f5;
+  --txt2:   #636d8f;
+  --txt3:   #323852;
+  --acc:    #00f076;
+  --acc-d:  rgba(0,240,118,.09);
+  --acc-g:  rgba(0,240,118,.20);
+  --red:    #ff3f5e;
+  --red-d:  rgba(255,63,94,.10);
+  --ylw:    #ffbe3a;
+  --blu:    #4a9cff;
+  --r:10px; --rl:16px; --rxl:22px;
+  --sw:228px;
+  --ease:cubic-bezier(.4,0,.2,1);
+}
+[data-theme="light"] {
+  --bg:#eef0f7; --bg-s:#ffffff; --bg-e:#e4e7f2;
+  --bdr:#d2d6ea; --bdr-l:#c0c6de;
+  --txt:#080c1a; --txt2:#5a6280; --txt3:#9aa0c0;
+  --acc:#00a84a; --acc-d:rgba(0,168,74,.09); --acc-g:rgba(0,168,74,.20);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden;transition:background .3s,color .3s}
+button{cursor:pointer;font-family:inherit;border:none;background:none}
+input{font-family:inherit}
+h1,h2,h3{font-family:'Syne',sans-serif;letter-spacing:-.02em}
+
+/* ══ PAGE SYSTEM ══ */
+.page{display:none;min-height:100vh}
+.page.on{display:flex}
+
+/* ══════════════════════
+   AUTH PAGE
+══════════════════════ */
+#pg-auth{
+  align-items:center;justify-content:center;
+  flex-direction:column;
+  position:relative;overflow:hidden;
+}
+.auth-bg-glow{
+  position:fixed;pointer-events:none;
+  width:700px;height:700px;border-radius:50%;
+  background:radial-gradient(circle, rgba(0,240,118,.11) 0%, transparent 65%);
+  top:-200px;right:-180px;
+  animation:glow-pulse 7s ease-in-out infinite;
+}
+.auth-bg-glow2{
+  position:fixed;pointer-events:none;
+  width:500px;height:500px;border-radius:50%;
+  background:radial-gradient(circle, rgba(74,156,255,.07) 0%, transparent 65%);
+  bottom:-150px;left:-100px;
+  animation:glow-pulse 9s ease-in-out infinite reverse;
+}
+.auth-grid{
+  position:fixed;inset:0;pointer-events:none;
+  background-image:linear-gradient(var(--bdr) 1px,transparent 1px),linear-gradient(90deg,var(--bdr) 1px,transparent 1px);
+  background-size:50px 50px;opacity:.3;
+}
+@keyframes glow-pulse{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.08);opacity:1}}
+
+.auth-wrap{
+  position:relative;z-index:2;
+  width:100%;max-width:420px;padding:20px;
+  display:flex;flex-direction:column;align-items:center;gap:28px;
+  animation:fadeUp .4s var(--ease);
+}
+
+/* brand */
+.brand-row{display:flex;align-items:center;gap:14px}
+.brand-ico{
+  width:52px;height:52px;border-radius:14px;
+  background:var(--acc-d);border:1.5px solid var(--acc-g);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 40px var(--acc-g);
+}
+.brand-texts{display:flex;flex-direction:column}
+.brand-name{font-family:'Syne',sans-serif;font-weight:800;font-size:1.9rem;line-height:1;letter-spacing:-.03em}
+.brand-tag{font-size:.68rem;color:var(--txt3);text-transform:uppercase;letter-spacing:.12em;margin-top:3px}
+
+/* card */
+.auth-card{
+  width:100%;
+  background:var(--bg-s);
+  border:1px solid var(--bdr-l);
+  border-radius:var(--rxl);
+  padding:30px;
+  box-shadow:0 40px 100px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.04);
+}
+
+/* tabs */
+.tabs{display:flex;background:var(--bg-e);border-radius:var(--r);padding:4px;margin-bottom:26px}
+.tab{flex:1;padding:9px;border-radius:8px;font-size:.88rem;font-weight:600;color:var(--txt2);transition:all .2s}
+.tab.on{background:var(--bg-s);color:var(--txt);box-shadow:0 2px 10px rgba(0,0,0,.3)}
+.tab:hover:not(.on){color:var(--txt)}
+
+/* msg */
+.auth-msg{display:none;padding:10px 14px;border-radius:var(--r);font-size:.85rem;margin-bottom:18px;border:1px solid transparent}
+.auth-msg.err{display:block;background:var(--red-d);border-color:rgba(255,63,94,.3);color:var(--red)}
+.auth-msg.ok{display:block;background:var(--acc-d);border-color:var(--acc-g);color:var(--acc)}
+
+/* form */
+.aform{display:flex;flex-direction:column;gap:18px}
+.aform.hide{display:none}
+.field{display:flex;flex-direction:column;gap:7px}
+.field label{font-size:.73rem;color:var(--txt2);font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.field input{
+  background:var(--bg-e);border:1.5px solid var(--bdr);
+  border-radius:var(--r);padding:11px 14px;
+  color:var(--txt);font-size:.95rem;outline:none;
+  transition:border-color .18s,box-shadow .18s;
+}
+.field input:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-d)}
+.field input::placeholder{color:var(--txt3)}
+
+/* btn primary */
+.btn-p{
+  background:var(--acc);color:#000;
+  border-radius:var(--r);padding:12px 20px;
+  font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem;
+  margin-top:4px;
+  transition:opacity .18s,transform .18s,box-shadow .18s;
+}
+.btn-p:hover{opacity:.85;transform:translateY(-2px);box-shadow:0 8px 28px var(--acc-g)}
+.btn-p:active{transform:translateY(0)}
+
+.hint{font-size:.75rem;color:var(--txt3);text-align:center}
+
+/* theme toggle */
+.theme-btn{
+  width:40px;height:40px;border-radius:50%;
+  background:var(--bg-s);border:1px solid var(--bdr-l);
+  display:flex;align-items:center;justify-content:center;font-size:1.1rem;
+  transition:border-color .2s,transform .25s;
+}
+.theme-btn:hover{border-color:var(--acc);transform:rotate(25deg)}
+
+/* ══════════════════════
+   DASHBOARD PAGE
+══════════════════════ */
+#pg-dash{flex-direction:row}
+
+/* sidebar */
+.sidebar{
+  width:var(--sw);min-height:100vh;
+  background:var(--bg-s);border-right:1px solid var(--bdr);
+  display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;z-index:100;
+  padding:20px 12px;
+}
+.sb-brand{
+  display:flex;align-items:center;gap:10px;
+  padding:4px 8px 20px;border-bottom:1px solid var(--bdr);margin-bottom:14px;
+}
+.sb-logo{
+  width:34px;height:34px;border-radius:9px;
+  background:var(--acc-d);border:1px solid var(--acc-g);
+  display:flex;align-items:center;justify-content:center;
+}
+.sb-name{font-family:'Syne',sans-serif;font-weight:800;font-size:1.15rem}
+.sb-nav{display:flex;flex-direction:column;gap:3px;flex:1}
+.nav-a{
+  display:flex;align-items:center;gap:11px;
+  padding:10px 12px;border-radius:var(--r);
+  color:var(--txt2);font-size:.88rem;font-weight:500;
+  cursor:pointer;border:1px solid transparent;
+  transition:all .18s;user-select:none;
+}
+.nav-a:hover{background:var(--bg-e);color:var(--txt)}
+.nav-a.on{background:var(--acc-d);color:var(--acc);border-color:var(--acc-g)}
+.nav-ico{font-size:1rem;width:20px;text-align:center;flex-shrink:0}
+.nav-pill{
+  font-size:.6rem;margin-left:auto;
+  background:var(--bg-e);border:1px solid var(--bdr);
+  color:var(--txt3);padding:2px 6px;border-radius:99px;font-weight:600;
+}
+
+.sb-foot{border-top:1px solid var(--bdr);padding-top:14px;display:flex;flex-direction:column;gap:10px}
+.user-badge{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 10px;background:var(--bg-e);
+  border-radius:var(--r);border:1px solid var(--bdr);
+}
+.user-av{
+  width:34px;height:34px;border-radius:9px;
+  background:var(--acc);color:#000;
+  font-family:'Syne',sans-serif;font-weight:800;font-size:.9rem;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.user-inf{display:flex;flex-direction:column;overflow:hidden;flex:1}
+.user-nm{font-size:.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-lv{font-size:.68rem;color:var(--txt3)}
+.sb-btns{display:flex;align-items:center;gap:8px}
+.btn-out{
+  flex:1;border:1px solid var(--bdr);border-radius:var(--r);
+  padding:7px 10px;color:var(--txt2);font-size:.78rem;transition:all .18s;
+}
+.btn-out:hover{border-color:var(--red);color:var(--red)}
+
+/* main area */
+.main{margin-left:var(--sw);flex:1;padding:40px 44px;max-width:1120px}
+.sec{display:none;animation:fadeUp .25s var(--ease)}
+.sec.on{display:block}
+.sec-hd{margin-bottom:32px}
+.sec-title{font-size:2rem;font-weight:800;line-height:1.1}
+.sec-sub{color:var(--txt2);margin-top:5px;font-size:.93rem}
+
+/* stat cards */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:36px}
+.stat-card{
+  background:var(--bg-s);border:1px solid var(--bdr);
+  border-radius:var(--rl);padding:20px 22px;
+  display:flex;flex-direction:column;gap:8px;
+  transition:border-color .2s,transform .22s,box-shadow .22s;cursor:default;
+}
+.stat-card:hover{border-color:var(--acc-g);transform:translateY(-3px);box-shadow:0 14px 44px rgba(0,0,0,.3)}
+.stat-lbl{font-size:.68rem;color:var(--txt3);text-transform:uppercase;letter-spacing:.09em;font-weight:600}
+.stat-val{font-family:'Syne',sans-serif;font-size:2.1rem;font-weight:800;line-height:1}
+.stat-val.hi{color:var(--acc)}
+.bar-t{height:3px;background:var(--bg-e);border-radius:99px;overflow:hidden;margin-top:2px}
+.bar-f{height:100%;background:var(--acc);border-radius:99px;transition:width .7s var(--ease)}
+
+/* action grid */
+.ql-lbl{font-size:.7rem;color:var(--txt3);text-transform:uppercase;letter-spacing:.09em;font-weight:600;margin-bottom:14px}
+.act-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.act-card{
+  background:var(--bg-s);border:1px solid var(--bdr);
+  border-radius:var(--rl);padding:24px 20px;
+  cursor:pointer;display:flex;flex-direction:column;gap:10px;
+  transition:all .22s var(--ease);position:relative;overflow:hidden;
+}
+.act-card::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,var(--acc-d),transparent);
+  opacity:0;transition:opacity .22s;
+}
+.act-card:hover{border-color:var(--acc);transform:translateY(-4px);box-shadow:0 18px 55px rgba(0,240,118,.10)}
+.act-card:hover::before{opacity:1}
+.act-ico{font-size:1.7rem;position:relative;z-index:1}
+.act-nm{font-family:'Syne',sans-serif;font-weight:700;font-size:.93rem;position:relative;z-index:1}
+.act-ds{font-size:.77rem;color:var(--txt2);line-height:1.45;position:relative;z-index:1}
+
+/* coming soon */
+.coming{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;height:320px;
+  background:var(--bg-s);border:1.5px dashed var(--bdr-l);
+  border-radius:var(--rxl);color:var(--txt3);font-size:.93rem;
+}
+.coming-ico{font-size:2.5rem;opacity:.2}
+
+/* ══ ANIMATIONS ══ */
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* scrollbar */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--bdr-l);border-radius:99px}
+
+.hide{display:none!important}
+
+/* ══════════════════════════════════════════
+   MATCH LOGGER — NEW FEATURE 2
+══════════════════════════════════════════ */
+
+/* Two-column layout: form left, log right */
+.logger-layout{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+
+/* ── Match Meta Bar ── */
+.match-meta{
+  display:flex;align-items:center;gap:12px;
+  background:var(--bg-s);border:1px solid var(--bdr);
+  border-radius:var(--rl);padding:16px 20px;
+  margin-bottom:22px;flex-wrap:wrap;
+}
+.meta-field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:120px}
+.meta-field label{font-size:.68rem;color:var(--txt3);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.meta-field input, .meta-field select{
+  background:var(--bg-e);border:1.5px solid var(--bdr);
+  border-radius:var(--r);padding:8px 12px;
+  color:var(--txt);font-size:.88rem;outline:none;
+  transition:border-color .18s,box-shadow .18s;
+}
+.meta-field input:focus,.meta-field select:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-d)}
+.meta-field select option{background:var(--bg-e);color:var(--txt)}
+.meta-divider{width:1px;height:40px;background:var(--bdr);flex-shrink:0}
+
+/* ── Rally Form Card ── */
+.rally-card{
+  background:var(--bg-s);border:1px solid var(--bdr);
+  border-radius:var(--rl);padding:24px;
+  display:flex;flex-direction:column;gap:20px;
+}
+.rally-card-title{
+  font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;
+  display:flex;align-items:center;gap:10px;
+}
+.rally-count-badge{
+  font-size:.72rem;font-family:'DM Sans',sans-serif;font-weight:500;
+  background:var(--acc-d);border:1px solid var(--acc-g);
+  color:var(--acc);padding:3px 10px;border-radius:99px;
+}
+
+/* Button group selector (replaces dropdowns for speed) */
+.btn-group{display:flex;flex-direction:column;gap:7px}
+.btn-group-label{font-size:.7rem;color:var(--txt3);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.btn-group-row{display:flex;gap:7px;flex-wrap:wrap}
+.opt-btn{
+  padding:7px 13px;border-radius:8px;font-size:.82rem;font-weight:500;
+  background:var(--bg-e);border:1.5px solid var(--bdr);
+  color:var(--txt2);transition:all .16s;
+}
+.opt-btn:hover{border-color:var(--bdr-l);color:var(--txt)}
+.opt-btn.on{background:var(--acc-d);border-color:var(--acc-g);color:var(--acc);font-weight:600}
+
+/* outcome colours */
+.opt-btn[data-val="winner"].on{background:rgba(0,240,118,.12);border-color:var(--acc);color:var(--acc)}
+.opt-btn[data-val="forced"].on{background:rgba(255,190,58,.10);border-color:var(--ylw);color:var(--ylw)}
+.opt-btn[data-val="unforced"].on{background:var(--red-d);border-color:rgba(255,63,94,.4);color:var(--red)}
+
+/* note input inside rally form */
+.note-input{
+  background:var(--bg-e);border:1.5px solid var(--bdr);
+  border-radius:var(--r);padding:9px 13px;
+  color:var(--txt);font-size:.88rem;outline:none;resize:none;height:62px;
+  transition:border-color .18s,box-shadow .18s;
+}
+.note-input:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-d)}
+.note-input::placeholder{color:var(--txt3)}
+
+/* Add rally button */
+.btn-add-rally{
+  background:var(--acc);color:#000;
+  border-radius:var(--r);padding:11px 18px;
+  font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;
+  transition:opacity .18s,transform .18s,box-shadow .18s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-add-rally:hover{opacity:.85;transform:translateY(-1px);box-shadow:0 6px 22px var(--acc-g)}
+.btn-add-rally:active{transform:translateY(0)}
+
+/* Save match button */
+.btn-save-match{
+  border:1.5px solid var(--acc-g);color:var(--acc);
+  border-radius:var(--r);padding:11px 18px;
+  font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;
+  background:var(--acc-d);
+  transition:all .18s;
+}
+.btn-save-match:hover{background:var(--acc);color:#000;box-shadow:0 6px 22px var(--acc-g)}
+
+.form-btns{display:flex;gap:10px}
+
+/* ── Rally Log Panel ── */
+.log-panel{
+  background:var(--bg-s);border:1px solid var(--bdr);
+  border-radius:var(--rl);padding:24px;
+  display:flex;flex-direction:column;gap:16px;
+  max-height:620px;
+}
+.log-panel-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.log-panel-title{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem}
+.btn-clear{
+  font-size:.75rem;color:var(--txt3);
+  border:1px solid var(--bdr);border-radius:6px;
+  padding:4px 10px;transition:all .16s;
+}
+.btn-clear:hover{color:var(--red);border-color:rgba(255,63,94,.4)}
+
+.log-scroll{overflow-y:auto;display:flex;flex-direction:column;gap:8px;flex:1}
+.log-empty{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;height:200px;color:var(--txt3);font-size:.85rem;text-align:center;
+}
+.log-empty-ico{font-size:2rem;opacity:.2}
+
+/* Individual rally row */
+.rally-row{
+  background:var(--bg-e);border:1px solid var(--bdr);
+  border-radius:var(--r);padding:11px 14px;
+  display:grid;grid-template-columns:24px 1fr auto;
+  align-items:center;gap:10px;
+  animation:fadeUp .2s var(--ease);
+}
+.rally-num{
+  font-family:'Syne',sans-serif;font-weight:700;font-size:.78rem;
+  color:var(--txt3);text-align:center;
+}
+.rally-tags{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.tag{
+  font-size:.7rem;font-weight:600;padding:3px 8px;border-radius:6px;
+  background:var(--bg-s);border:1px solid var(--bdr);color:var(--txt2);
+}
+.tag.winner{background:rgba(0,240,118,.1);border-color:var(--acc-g);color:var(--acc)}
+.tag.forced{background:rgba(255,190,58,.1);border-color:rgba(255,190,58,.3);color:var(--ylw)}
+.tag.unforced{background:var(--red-d);border-color:rgba(255,63,94,.3);color:var(--red)}
+.rally-del{
+  font-size:.85rem;color:var(--txt3);padding:3px 6px;border-radius:5px;
+  transition:all .15s;flex-shrink:0;
+}
+.rally-del:hover{color:var(--red);background:var(--red-d)}
+
+/* ── Saved Matches List ── */
+.matches-section{margin-top:28px}
+.matches-grid{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.match-row{
+  background:var(--bg-s);border:1px solid var(--bdr);
+  border-radius:var(--rl);padding:16px 20px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  transition:border-color .18s;cursor:default;
+}
+.match-row:hover{border-color:var(--bdr-l)}
+.match-row-left{display:flex;flex-direction:column;gap:4px}
+.match-vs{font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem}
+.match-meta-tags{display:flex;gap:8px;flex-wrap:wrap}
+.match-meta-tag{font-size:.72rem;color:var(--txt3)}
+.match-row-stats{display:flex;gap:18px;align-items:center}
+.match-stat{display:flex;flex-direction:column;align-items:center;gap:2px}
+.match-stat-val{font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem}
+.match-stat-val.g{color:var(--acc)}
+.match-stat-val.r{color:var(--red)}
+.match-stat-lbl{font-size:.65rem;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em}
+.match-del-btn{
+  font-size:.8rem;color:var(--txt3);border:1px solid var(--bdr);
+  border-radius:7px;padding:5px 10px;transition:all .15s;
+}
+.match-del-btn:hover{color:var(--red);border-color:rgba(255,63,94,.4)}
+
+/* ══════════════════════════════════════════
+   ANALYTICS — FEATURE 3
+══════════════════════════════════════════ */
+
+/* Top KPI row */
+.an-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.an-kpi{
+  background:var(--bg-s);border:1px solid var(--bdr);
+  border-radius:var(--rl);padding:20px 22px;
+  display:flex;flex-direction:column;gap:6px;
+  transition:border-color .2s,transform .2s;
+}
+.an-kpi:hover{border-color:var(--acc-g);transform:translateY(-2px)}
+.an-kpi-lbl{font-size:.68rem;color:var(--txt3);text-transform:uppercase;letter-spacing:.09em;font-weight:600}
+.an-kpi-val{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;line-height:1}
+.an-kpi-val.g{color:var(--acc)}
+.an-kpi-val.r{color:var(--red)}
+.an-kpi-val.y{color:var(--ylw)}
+.an-kpi-sub{font-size:.75rem;color:var(--txt3)}
+.an-bar-t{height:3px;background:var(--bg-e);border-radius:99px;overflow:hidden;margin-top:4px}
+.an-bar-f{height:100%;border-radius:99px;transition:width .8s var(--ease)}
+.an-bar-f.g{background:var(--acc)}
+.an-bar-f.r{background:var(--red)}
+.an-bar-f.y{background:var(--ylw)}
+.an-bar-f.b{background:var(--blu)}
+
+/* Main analytics grid */
+.an-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+.an-grid-full{grid-column:1/-1}
+
+/* Panel card */
+.an-panel{
+  background:var(--bg-s);border:1px solid var(--bdr);
+  border-radius:var(--rl);padding:22px 24px;
+}
+.an-panel-title{
+  font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem;
+  margin-bottom:18px;display:flex;align-items:center;gap:8px;
+}
+.an-panel-title-ico{font-size:1rem;opacity:.6}
+
+/* Serve breakdown bars */
+.serve-bars{display:flex;flex-direction:column;gap:12px}
+.serve-bar-row{display:flex;align-items:center;gap:12px}
+.serve-bar-lbl{font-size:.8rem;color:var(--txt2);width:72px;flex-shrink:0}
+.serve-bar-track{flex:1;height:8px;background:var(--bg-e);border-radius:99px;overflow:hidden}
+.serve-bar-fill{height:100%;border-radius:99px;background:var(--acc);transition:width .8s var(--ease)}
+.serve-bar-pct{font-size:.78rem;font-weight:600;color:var(--txt2);width:36px;text-align:right;flex-shrink:0}
+
+/* Error breakdown */
+.error-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.error-cell{
+  background:var(--bg-e);border:1px solid var(--bdr);
+  border-radius:var(--r);padding:14px 16px;
+  display:flex;flex-direction:column;gap:4px;
+}
+.error-cell-lbl{font-size:.7rem;color:var(--txt3);text-transform:uppercase;letter-spacing:.07em;font-weight:600}
+.error-cell-val{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:var(--red)}
+.error-cell-sub{font-size:.72rem;color:var(--txt3)}
+
+/* Weakness heatmap (text-based) */
+.heat-list{display:flex;flex-direction:column;gap:8px}
+.heat-row{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 14px;
+  background:var(--bg-e);border:1px solid var(--bdr);
+  border-radius:var(--r);
+}
+.heat-rank{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:.85rem;
+  color:var(--txt3);width:20px;flex-shrink:0;text-align:center;
+}
+.heat-label{flex:1;font-size:.85rem;font-weight:500}
+.heat-count{font-size:.78rem;color:var(--txt3)}
+.heat-bar-wrap{width:80px}
+.heat-bar-t{height:4px;background:var(--bdr);border-radius:99px;overflow:hidden}
+.heat-bar-f{height:100%;border-radius:99px;background:var(--red);transition:width .8s var(--ease)}
+
+/* Receive quality */
+.rcv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.rcv-cell{
+  background:var(--bg-e);border:1px solid var(--bdr);border-radius:var(--r);
+  padding:12px 14px;display:flex;flex-direction:column;gap:4px;
+}
+.rcv-cell-lbl{font-size:.7rem;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.rcv-cell-val{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800}
+
+/* Opponent notes list */
+.notes-list{display:flex;flex-direction:column;gap:8px}
+.note-row{
+  display:flex;gap:10px;align-items:flex-start;
+  padding:10px 14px;
+  background:var(--bg-e);border:1px solid var(--bdr);border-radius:var(--r);
+}
+.note-ico{font-size:.9rem;opacity:.5;flex-shrink:0;margin-top:1px}
+.note-txt{font-size:.84rem;line-height:1.5;color:var(--txt2)}
+.note-src{font-size:.7rem;color:var(--txt3);margin-top:2px}
+
+/* Empty analytics state */
+.an-empty{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:12px;padding:60px 20px;
+  background:var(--bg-s);border:1.5px dashed var(--bdr-l);border-radius:var(--rxl);
+  color:var(--txt3);text-align:center;
+}
+.an-empty-ico{font-size:3rem;opacity:.2}
+.an-empty p{font-size:.9rem;line-height:1.6;max-width:280px}
+.an-empty .btn-p{margin-top:8px;padding:10px 22px;font-size:.88rem}
+
+/* Mini donut-style ring stat */
+.ring-row{display:flex;align-items:center;gap:16px;margin-bottom:12px}
+.ring-stat{
+  width:70px;height:70px;border-radius:50%;flex-shrink:0;
+  background:conic-gradient(var(--acc) var(--pct,0%), var(--bg-e) 0%);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+}
+.ring-stat::after{
+  content:'';position:absolute;
+  width:50px;height:50px;border-radius:50%;background:var(--bg-s);
+}
+.ring-val{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:.85rem;
+  position:relative;z-index:1;
+}
+.ring-info{display:flex;flex-direction:column;gap:3px}
+.ring-label{font-size:.85rem;font-weight:500}
+.ring-sub{font-size:.75rem;color:var(--txt3)}
+
+
+/* ══════════════════════════════════════════
+   TACTICAL QUIZ — FEATURE 4
+══════════════════════════════════════════ */
+
+/* Score bar at top */
+.quiz-header {
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--bg-s); border:1px solid var(--bdr);
+  border-radius:var(--rl); padding:16px 22px; margin-bottom:24px;
+  gap:20px;
+}
+.quiz-score-group { display:flex; gap:28px; align-items:center; }
+.quiz-score-item  { display:flex; flex-direction:column; gap:2px; align-items:center; }
+.quiz-score-val   {
+  font-family:'Syne',sans-serif; font-weight:800; font-size:1.5rem; line-height:1;
+}
+.quiz-score-val.g { color:var(--acc); }
+.quiz-score-val.r { color:var(--red); }
+.quiz-score-lbl   { font-size:.65rem; color:var(--txt3); text-transform:uppercase; letter-spacing:.08em; font-weight:600; }
+.quiz-progress-wrap { flex:1; display:flex; flex-direction:column; gap:5px; }
+.quiz-progress-lbl  { font-size:.72rem; color:var(--txt3); display:flex; justify-content:space-between; }
+.quiz-progress-t    { height:5px; background:var(--bg-e); border-radius:99px; overflow:hidden; }
+.quiz-progress-f    { height:100%; background:var(--acc); border-radius:99px; transition:width .5s var(--ease); }
+.btn-quiz-reset {
+  border:1px solid var(--bdr); border-radius:var(--r);
+  padding:7px 14px; color:var(--txt3); font-size:.78rem;
+  transition:all .18s;
+}
+.btn-quiz-reset:hover { border-color:var(--red); color:var(--red); }
+
+/* Question card */
+.quiz-card {
+  background:var(--bg-s); border:1px solid var(--bdr);
+  border-radius:var(--rxl); padding:32px 36px;
+  max-width:720px; margin:0 auto;
+  animation:fadeUp .3s var(--ease);
+}
+.quiz-q-num  {
+  font-size:.7rem; color:var(--txt3); text-transform:uppercase;
+  letter-spacing:.1em; font-weight:600; margin-bottom:10px;
+}
+.quiz-scenario {
+  background:var(--bg-e); border:1px solid var(--bdr);
+  border-radius:var(--rl); padding:18px 20px;
+  margin-bottom:26px;
+}
+.quiz-scenario-label {
+  font-size:.68rem; color:var(--acc); text-transform:uppercase;
+  letter-spacing:.1em; font-weight:600; margin-bottom:8px;
+}
+.quiz-scenario-text {
+  font-size:1rem; line-height:1.6; color:var(--txt);
+}
+.quiz-question {
+  font-family:'Syne',sans-serif; font-weight:700;
+  font-size:1.15rem; line-height:1.4; margin-bottom:22px;
+}
+
+/* Answer options */
+.quiz-options { display:flex; flex-direction:column; gap:10px; }
+.quiz-opt {
+  display:flex; align-items:center; gap:14px;
+  background:var(--bg-e); border:1.5px solid var(--bdr);
+  border-radius:var(--rl); padding:14px 18px;
+  cursor:pointer; transition:all .18s; text-align:left;
+  font-size:.9rem; color:var(--txt2);
+}
+.quiz-opt:hover:not(:disabled) {
+  border-color:var(--bdr-l); color:var(--txt);
+  background:var(--bg-s);
+}
+.quiz-opt:disabled { cursor:default; }
+.quiz-opt.correct {
+  background:rgba(0,240,118,.10); border-color:var(--acc);
+  color:var(--acc); font-weight:600;
+}
+.quiz-opt.wrong {
+  background:var(--red-d); border-color:rgba(255,63,94,.35);
+  color:var(--red);
+}
+.quiz-opt.reveal {
+  background:rgba(0,240,118,.06); border-color:var(--bdr);
+  color:var(--txt2); opacity:.55;
+}
+.quiz-opt-letter {
+  width:28px; height:28px; border-radius:7px; flex-shrink:0;
+  background:var(--bdr); display:flex; align-items:center;
+  justify-content:center; font-family:'Syne',sans-serif;
+  font-weight:800; font-size:.8rem; color:var(--txt3);
+  transition:all .18s;
+}
+.quiz-opt.correct .quiz-opt-letter { background:var(--acc); color:#000; }
+.quiz-opt.wrong   .quiz-opt-letter { background:var(--red); color:#fff; }
+
+/* Feedback panel */
+.quiz-feedback {
+  display:none; margin-top:22px;
+  border-radius:var(--rl); padding:16px 20px;
+  border:1px solid transparent;
+  animation:fadeUp .25s var(--ease);
+}
+.quiz-feedback.show  { display:block; }
+.quiz-feedback.ok    { background:rgba(0,240,118,.08); border-color:var(--acc-g); }
+.quiz-feedback.fail  { background:var(--red-d); border-color:rgba(255,63,94,.3); }
+.quiz-feedback-title {
+  font-family:'Syne',sans-serif; font-weight:700; font-size:.95rem; margin-bottom:5px;
+}
+.quiz-feedback.ok   .quiz-feedback-title { color:var(--acc); }
+.quiz-feedback.fail .quiz-feedback-title { color:var(--red); }
+.quiz-feedback-body { font-size:.85rem; line-height:1.55; color:var(--txt2); }
+
+.btn-quiz-next {
+  display:none; margin-top:20px; width:100%;
+  background:var(--acc); color:#000;
+  border-radius:var(--r); padding:13px;
+  font-family:'Syne',sans-serif; font-weight:700; font-size:.95rem;
+  transition:opacity .18s, transform .18s, box-shadow .18s;
+}
+.btn-quiz-next.show { display:block; }
+.btn-quiz-next:hover { opacity:.85; transform:translateY(-1px); box-shadow:0 6px 22px var(--acc-g); }
+
+/* End screen */
+.quiz-end {
+  display:none; text-align:center; padding:50px 30px;
+  background:var(--bg-s); border:1px solid var(--bdr);
+  border-radius:var(--rxl); max-width:520px; margin:0 auto;
+  animation:fadeUp .35s var(--ease);
+}
+.quiz-end.show { display:block; }
+.quiz-end-score {
+  font-family:'Syne',sans-serif; font-weight:800; font-size:3.5rem;
+  line-height:1; margin:12px 0 4px;
+}
+.quiz-end-label { font-size:.85rem; color:var(--txt3); margin-bottom:22px; }
+.quiz-end-msg   { font-size:1rem; line-height:1.6; color:var(--txt2); margin-bottom:26px; }
+.quiz-end-btns  { display:flex; gap:12px; justify-content:center; }
+
+/* Weak tactics list */
+.weak-section { margin-top:30px; }
+.weak-list    { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+.weak-row {
+  display:flex; align-items:flex-start; gap:12px;
+  background:var(--bg-s); border:1px solid var(--bdr);
+  border-radius:var(--r); padding:12px 16px;
+}
+.weak-ico  { color:var(--red); flex-shrink:0; font-size:.9rem; margin-top:1px; }
+.weak-body { display:flex; flex-direction:column; gap:2px; }
+.weak-q    { font-size:.84rem; color:var(--txt2); line-height:1.45; }
+.weak-ans  { font-size:.75rem; color:var(--txt3); }
+
+
+/* ══════════════════════════════════════════
+   DRILL GENERATOR — FEATURE 5
+══════════════════════════════════════════ */
+.drill-layout { display:grid; grid-template-columns:1fr 1.4fr; gap:24px; align-items:start; }
+
+.drill-form-card {
+  background:var(--bg-s); border:1px solid var(--bdr);
+  border-radius:var(--rl); padding:26px;
+  display:flex; flex-direction:column; gap:20px;
+}
+.drill-form-title { font-family:'Syne',sans-serif; font-weight:700; font-size:1rem; }
+
+.drill-field { display:flex; flex-direction:column; gap:8px; }
+.drill-field label {
+  font-size:.7rem; color:var(--txt3); text-transform:uppercase;
+  letter-spacing:.08em; font-weight:600;
+}
+.drill-field input, .drill-field select {
+  background:var(--bg-e); border:1.5px solid var(--bdr);
+  border-radius:var(--r); padding:11px 14px;
+  color:var(--txt); font-size:.9rem; outline:none;
+  transition:border-color .18s, box-shadow .18s;
+}
+.drill-field input:focus, .drill-field select:focus {
+  border-color:var(--acc); box-shadow:0 0 0 3px var(--acc-d);
+}
+.drill-field select option { background:var(--bg-e); color:var(--txt); }
+
+.drill-tag-row { display:flex; flex-wrap:wrap; gap:7px; }
+.drill-tag {
+  padding:7px 13px; border-radius:8px; font-size:.82rem; font-weight:500;
+  background:var(--bg-e); border:1.5px solid var(--bdr); color:var(--txt2);
+  cursor:pointer; transition:all .16s;
+}
+.drill-tag:hover { border-color:var(--bdr-l); color:var(--txt); }
+.drill-tag.on { background:var(--acc-d); border-color:var(--acc-g); color:var(--acc); font-weight:600; }
+
+.btn-gen-drill {
+  background:var(--acc); color:#000;
+  border-radius:var(--r); padding:12px 20px;
+  font-family:'Syne',sans-serif; font-weight:700; font-size:.95rem;
+  transition:opacity .18s, transform .18s, box-shadow .18s;
+}
+.btn-gen-drill:hover { opacity:.85; transform:translateY(-1px); box-shadow:0 6px 22px var(--acc-g); }
+.btn-gen-drill:active { transform:translateY(0); }
+
+/* Output panel */
+.drill-output {
+  background:var(--bg-s); border:1px solid var(--bdr);
+  border-radius:var(--rl); padding:26px;
+  min-height:400px; display:flex; flex-direction:column; gap:0;
+}
+.drill-output-empty {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:10px; color:var(--txt3); text-align:center;
+}
+.drill-output-empty-ico { font-size:2.5rem; opacity:.18; }
+
+.drill-plan { display:flex; flex-direction:column; gap:0; animation:fadeUp .3s var(--ease); }
+.drill-plan-header {
+  display:flex; align-items:flex-start; justify-content:space-between;
+  margin-bottom:20px; gap:12px;
+}
+.drill-plan-title { font-family:'Syne',sans-serif; font-weight:800; font-size:1.2rem; line-height:1.2; }
+.drill-plan-meta { display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
+.drill-meta-tag {
+  font-size:.7rem; color:var(--txt3); background:var(--bg-e);
+  border:1px solid var(--bdr); border-radius:6px; padding:3px 9px;
+}
+.btn-save-drill {
+  border:1px solid var(--acc-g); color:var(--acc);
+  background:var(--acc-d); border-radius:var(--r);
+  padding:8px 14px; font-size:.8rem; font-weight:600;
+  flex-shrink:0; transition:all .18s;
+}
+.btn-save-drill:hover { background:var(--acc); color:#000; }
+
+/* Drill steps */
+.drill-steps { display:flex; flex-direction:column; gap:12px; }
+.drill-step {
+  display:flex; gap:14px; align-items:flex-start;
+  background:var(--bg-e); border:1px solid var(--bdr);
+  border-radius:var(--r); padding:14px 16px;
+}
+.drill-step-num {
+  width:28px; height:28px; border-radius:8px; flex-shrink:0;
+  background:var(--acc-d); border:1px solid var(--acc-g);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Syne',sans-serif; font-weight:800; font-size:.8rem; color:var(--acc);
+}
+.drill-step-body { display:flex; flex-direction:column; gap:4px; }
+.drill-step-name { font-weight:600; font-size:.9rem; }
+.drill-step-desc { font-size:.83rem; color:var(--txt2); line-height:1.5; }
+.drill-step-tags { display:flex; gap:8px; margin-top:4px; flex-wrap:wrap; }
+.drill-step-tag {
+  font-size:.68rem; color:var(--txt3); background:var(--bg-s);
+  border:1px solid var(--bdr); border-radius:5px; padding:2px 7px;
+}
+.drill-step-tag.reps { color:var(--acc); border-color:var(--acc-g); background:var(--acc-d); }
+
+/* Coaching cue box */
+.drill-cue-box {
+  margin-top:16px; padding:14px 16px;
+  background:rgba(0,240,118,.05); border:1px solid var(--acc-g);
+  border-radius:var(--r);
+}
+.drill-cue-title { font-size:.7rem; color:var(--acc); text-transform:uppercase; letter-spacing:.09em; font-weight:600; margin-bottom:6px; }
+.drill-cue-list { display:flex; flex-direction:column; gap:5px; }
+.drill-cue-item { font-size:.83rem; color:var(--txt2); line-height:1.5; }
+.drill-cue-item::before { content:'→ '; color:var(--acc); font-weight:600; }
+
+/* Saved drills */
+.saved-drills-section { margin-top:28px; }
+.saved-drill-row {
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--bg-s); border:1px solid var(--bdr); border-radius:var(--r);
+  padding:12px 18px; gap:14px; margin-top:10px;
+  transition:border-color .18s;
+}
+.saved-drill-row:hover { border-color:var(--bdr-l); }
+.saved-drill-name { font-weight:600; font-size:.88rem; }
+.saved-drill-meta { font-size:.75rem; color:var(--txt3); margin-top:2px; }
+.saved-drill-del {
+  font-size:.78rem; color:var(--txt3); border:1px solid var(--bdr);
+  border-radius:6px; padding:4px 10px; transition:all .15s; flex-shrink:0;
+}
+.saved-drill-del:hover { color:var(--red); border-color:rgba(255,63,94,.4); }
+
+/* ══════════════════════════════════════════
+   ABOUT SECTION
+══════════════════════════════════════════ */
+.about-layout { display:grid; grid-template-columns:1fr 1.6fr; gap:28px; align-items:start; }
+
+.about-profile-card {
+  background:var(--bg-s); border:1px solid var(--bdr);
+  border-radius:var(--rxl); padding:32px 28px;
+  display:flex; flex-direction:column; align-items:center;
+  gap:16px; text-align:center;
+  position:sticky; top:30px;
+}
+.about-avatar {
+  width:90px; height:90px; border-radius:50%;
+  background:var(--acc); color:#000;
+  font-family:'Syne',sans-serif; font-weight:800; font-size:2.2rem;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 0 40px var(--acc-g); flex-shrink:0;
+}
+.about-name { font-family:'Syne',sans-serif; font-weight:800; font-size:1.4rem; line-height:1; }
+.about-handle { font-size:.8rem; color:var(--txt3); margin-top:2px; }
+.about-divider { width:100%; height:1px; background:var(--bdr); }
+.about-stat-row { display:flex; gap:20px; width:100%; justify-content:center; }
+.about-stat { display:flex; flex-direction:column; align-items:center; gap:3px; }
+.about-stat-val { font-family:'Syne',sans-serif; font-weight:800; font-size:1.4rem; color:var(--acc); }
+.about-stat-lbl { font-size:.68rem; color:var(--txt3); text-transform:uppercase; letter-spacing:.07em; }
+.about-badge-row { display:flex; flex-wrap:wrap; gap:7px; justify-content:center; }
+.about-badge {
+  font-size:.72rem; padding:4px 11px; border-radius:99px;
+  background:var(--bg-e); border:1px solid var(--bdr); color:var(--txt2);
+}
+.about-badge.hi { background:var(--acc-d); border-color:var(--acc-g); color:var(--acc); }
+
+.about-content-col { display:flex; flex-direction:column; gap:20px; }
+.about-block {
+  background:var(--bg-s); border:1px solid var(--bdr);
+  border-radius:var(--rl); padding:24px 26px;
+}
+.about-block-title {
+  font-family:'Syne',sans-serif; font-weight:700; font-size:.95rem;
+  margin-bottom:14px; display:flex; align-items:center; gap:8px;
+}
+.about-block-title-ico { opacity:.5; }
+.about-body { font-size:.9rem; color:var(--txt2); line-height:1.7; }
+.about-body strong { color:var(--txt); font-weight:600; }
+.about-timeline { display:flex; flex-direction:column; gap:0; }
+.about-tl-item {
+  display:flex; gap:16px; position:relative; padding-bottom:18px;
+}
+.about-tl-item:last-child { padding-bottom:0; }
+.about-tl-left { display:flex; flex-direction:column; align-items:center; gap:0; flex-shrink:0; width:18px; }
+.about-tl-dot {
+  width:10px; height:10px; border-radius:50%;
+  background:var(--acc); border:2px solid var(--bg-s);
+  box-shadow:0 0 0 2px var(--acc-g); flex-shrink:0; margin-top:4px;
+}
+.about-tl-line { flex:1; width:1px; background:var(--bdr); margin-top:4px; }
+.about-tl-right { display:flex; flex-direction:column; gap:3px; }
+.about-tl-year { font-size:.72rem; color:var(--acc); font-weight:600; text-transform:uppercase; letter-spacing:.07em; }
+.about-tl-event { font-size:.88rem; color:var(--txt); font-weight:500; line-height:1.4; }
+.about-tl-sub { font-size:.78rem; color:var(--txt3); }
+
+.about-quote {
+  background:var(--acc-d); border:1px solid var(--acc-g);
+  border-radius:var(--rl); padding:22px 24px;
+  font-size:1rem; line-height:1.65; color:var(--txt2);
+  font-style:italic; position:relative;
+}
+.about-quote::before {
+  content:'"'; font-family:'Syne',sans-serif; font-weight:800;
+  font-size:4rem; color:var(--acc); opacity:.3; line-height:1;
+  position:absolute; top:8px; left:18px;
+}
+.about-quote-text { position:relative; z-index:1; padding-left:10px; }
+.about-quote-author { font-size:.78rem; color:var(--acc); font-weight:600; margin-top:10px; font-style:normal; padding-left:10px; }
+
+
+/* ══════════════════════════════════════════
+   COACH MA — AI ANALYSIS FEATURE
+══════════════════════════════════════════ */
+
+/* Coach identity bar */
+.coach-id {
+  display:flex; align-items:center; gap:16px;
+  background:var(--bg-s); border:1px solid var(--bdr);
+  border-radius:var(--rl); padding:18px 22px; margin-bottom:24px;
+  position:relative; overflow:hidden;
+}
+.coach-id::before {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(135deg, rgba(0,240,118,.05) 0%, transparent 60%);
+  pointer-events:none;
+}
+.coach-avatar {
+  width:52px; height:52px; border-radius:14px; flex-shrink:0;
+  background:linear-gradient(135deg, #00f076, #00b854);
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.5rem; box-shadow:0 0 24px rgba(0,240,118,.3);
+}
+.coach-meta { flex:1; }
+.coach-name { font-family:'Syne',sans-serif; font-weight:800; font-size:1.1rem; }
+.coach-title { font-size:.78rem; color:var(--txt2); margin-top:2px; line-height:1.4; }
+.coach-status {
+  display:flex; align-items:center; gap:6px;
+  font-size:.72rem; color:var(--acc); font-weight:600;
+}
+.coach-status-dot {
+  width:7px; height:7px; border-radius:50%; background:var(--acc);
+  animation:status-pulse 2s ease-in-out infinite;
+}
+@keyframes status-pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* Two-mode tabs */
+.coach-mode-tabs {
+  display:flex; gap:12px; margin-bottom:22px;
+}
+.coach-tab {
+  flex:1; padding:14px 18px; border-radius:var(--rl);
+  background:var(--bg-s); border:1.5px solid var(--bdr);
+  display:flex; flex-direction:column; gap:5px;
+  cursor:pointer; transition:all .2s; text-align:left;
+}
+.coach-tab:hover { border-color:var(--bdr-l); }
+.coach-tab.on { border-color:var(--acc); background:var(--acc-d); }
+.coach-tab-ico { font-size:1.3rem; }
+.coach-tab-name { font-family:'Syne',sans-serif; font-weight:700; font-size:.9rem; }
+.coach-tab-desc { font-size:.75rem; color:var(--txt3); line-height:1.4; }
+.coach-tab.on .coach-tab-desc { color:var(--txt2); }
+
+/* Mode panels */
+.coach-panel { display:none; }
+.coach-panel.on { display:block; }
+
+/* ── Video Analysis (Mode B) ── */
+.yt-input-row {
+  display:flex; gap:10px; margin-bottom:20px;
+}
+.yt-input {
+  flex:1; background:var(--bg-e); border:1.5px solid var(--bdr);
+  border-radius:var(--r); padding:11px 14px;
+  color:var(--txt); font-size:.9rem; outline:none;
+  transition:border-color .18s, box-shadow .18s;
+}
+.yt-input:focus { border-color:var(--acc); box-shadow:0 0 0 3px var(--acc-d); }
+.yt-input::placeholder { color:var(--txt3); }
+.btn-load-yt {
+  background:var(--acc); color:#000;
+  border-radius:var(--r); padding:11px 20px;
+  font-family:'Syne',sans-serif; font-weight:700; font-size:.88rem;
+  transition:opacity .18s, transform .18s;
+  white-space:nowrap; flex-shrink:0;
+}
+.btn-load-yt:hover { opacity:.85; transform:translateY(-1px); }
+
+.yt-embed-wrap {
+  display:none; margin-bottom:22px;
+  border-radius:var(--rl); overflow:hidden;
+  border:1px solid var(--bdr);
+  aspect-ratio:16/9; background:#000;
+}
+.yt-embed-wrap.show { display:block; }
+.yt-embed-wrap iframe { width:100%; height:100%; display:block; border:none; }
+
+/* Observation form */
+.obs-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;
+}
+.obs-field { display:flex; flex-direction:column; gap:7px; }
+.obs-field.full { grid-column:1/-1; }
+.obs-label {
+  font-size:.7rem; color:var(--txt3); text-transform:uppercase;
+  letter-spacing:.08em; font-weight:600;
+}
+.obs-textarea {
+  background:var(--bg-e); border:1.5px solid var(--bdr);
+  border-radius:var(--r); padding:10px 14px;
+  color:var(--txt); font-size:.88rem; outline:none;
+  resize:none; line-height:1.5;
+  transition:border-color .18s, box-shadow .18s;
+}
+.obs-textarea:focus { border-color:var(--acc); box-shadow:0 0 0 3px var(--acc-d); }
+.obs-textarea::placeholder { color:var(--txt3); }
+.obs-select {
+  background:var(--bg-e); border:1.5px solid var(--bdr);
+  border-radius:var(--r); padding:10px 14px;
+  color:var(--txt); font-size:.88rem; outline:none;
+  transition:border-color .18s;
+}
+.obs-select:focus { border-color:var(--acc); }
+.obs-select option { background:var(--bg-e); }
+
+/* ── Rally Debrief (Mode C) ── */
+.debrief-input-wrap { display:flex; flex-direction:column; gap:10px; margin-bottom:0; }
+.debrief-textarea {
+  background:var(--bg-e); border:1.5px solid var(--bdr);
+  border-radius:var(--rl); padding:16px 18px;
+  color:var(--txt); font-size:.9rem; outline:none;
+  resize:none; height:140px; line-height:1.6;
+  transition:border-color .18s, box-shadow .18s;
+}
+.debrief-textarea:focus { border-color:var(--acc); box-shadow:0 0 0 3px var(--acc-d); }
+.debrief-textarea::placeholder { color:var(--txt3); }
+.debrief-examples {
+  display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;
+}
+.debrief-ex {
+  font-size:.75rem; padding:5px 11px; border-radius:7px;
+  background:var(--bg-e); border:1px solid var(--bdr); color:var(--txt3);
+  cursor:pointer; transition:all .16s;
+}
+.debrief-ex:hover { border-color:var(--acc-g); color:var(--acc); }
+
+/* Shared: analyse button */
+.btn-analyse {
+  width:100%; background:var(--acc); color:#000;
+  border-radius:var(--r); padding:13px;
+  font-family:'Syne',sans-serif; font-weight:700; font-size:.95rem;
+  margin-top:16px;
+  transition:opacity .18s, transform .18s, box-shadow .18s;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.btn-analyse:hover { opacity:.85; transform:translateY(-1px); box-shadow:0 6px 22px var(--acc-g); }
+.btn-analyse:disabled { opacity:.45; transform:none; cursor:not-allowed; box-shadow:none; }
+
+/* Response area */
+.coach-response {
+  display:none; margin-top:24px;
+  animation:fadeUp .3s var(--ease);
+}
+.coach-response.show { display:block; }
+.coach-response-header {
+  display:flex; align-items:center; gap:10px; margin-bottom:16px;
+}
+.coach-response-avatar {
+  width:34px; height:34px; border-radius:9px; flex-shrink:0;
+  background:linear-gradient(135deg,#00f076,#00b854);
+  display:flex; align-items:center; justify-content:center; font-size:.9rem;
+}
+.coach-response-name { font-family:'Syne',sans-serif; font-weight:700; font-size:.88rem; }
+.coach-response-sub { font-size:.72rem; color:var(--txt3); }
+
+/* Response sections */
+.coach-report { display:flex; flex-direction:column; gap:14px; }
+.report-block {
+  background:var(--bg-s); border:1px solid var(--bdr);
+  border-radius:var(--rl); padding:18px 20px;
+  animation:fadeUp .3s var(--ease);
+}
+.report-block-title {
+  font-family:'Syne',sans-serif; font-weight:700; font-size:.88rem;
+  margin-bottom:10px; display:flex; align-items:center; gap:8px;
+}
+.report-block-title-ico { font-size:.9rem; }
+.report-block.critical { border-color:rgba(255,63,94,.3); background:var(--red-d); }
+.report-block.critical .report-block-title { color:var(--red); }
+.report-block.good { border-color:var(--acc-g); background:var(--acc-d); }
+.report-block.good .report-block-title { color:var(--acc); }
+.report-block.neutral { border-color:var(--bdr-l); }
+.report-text { font-size:.88rem; line-height:1.7; color:var(--txt2); }
+.report-text strong { color:var(--txt); font-weight:600; }
+.report-list { display:flex; flex-direction:column; gap:6px; margin-top:4px; }
+.report-list-item {
+  font-size:.86rem; color:var(--txt2); line-height:1.5;
+  padding-left:14px; position:relative;
+}
+.report-list-item::before { content:'→'; position:absolute; left:0; color:var(--acc); font-weight:700; }
+.report-list-item.bad::before { content:'✕'; color:var(--red); }
+.report-list-item.fix::before { content:'◈'; color:var(--ylw); }
+
+/* Loading state */
+.coach-loading {
+  display:none; align-items:center; justify-content:center;
+  gap:12px; padding:40px; color:var(--txt3); font-size:.9rem;
+  margin-top:20px;
+}
+.coach-loading.show { display:flex; }
+.loading-dots { display:flex; gap:5px; }
+.loading-dot {
+  width:7px; height:7px; border-radius:50%; background:var(--acc);
+  animation:dot-bounce .8s ease-in-out infinite;
+}
+.loading-dot:nth-child(2) { animation-delay:.15s; }
+.loading-dot:nth-child(3) { animation-delay:.3s; }
+@keyframes dot-bounce { 0%,80%,100%{transform:scale(.6);opacity:.4} 40%{transform:scale(1);opacity:1} }
+
+/* History list */
+.coach-history { margin-top:28px; }
+.history-item {
+  background:var(--bg-s); border:1px solid var(--bdr);
+  border-radius:var(--r); padding:12px 16px; margin-top:10px;
+  display:flex; align-items:center; justify-content:space-between; gap:14px;
+  cursor:pointer; transition:border-color .18s;
+}
+.history-item:hover { border-color:var(--bdr-l); }
+.history-item-left { display:flex; flex-direction:column; gap:3px; }
+.history-item-type { font-size:.72rem; color:var(--acc); font-weight:600; text-transform:uppercase; letter-spacing:.06em; }
+.history-item-preview { font-size:.84rem; color:var(--txt2); }
+.history-item-date { font-size:.72rem; color:var(--txt3); flex-shrink:0; }
+
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════
+     AUTH PAGE
+══════════════════════════════ -->
+<div class="page on" id="pg-auth">
+  <div class="auth-bg-glow"></div>
+  <div class="auth-bg-glow2"></div>
+  <div class="auth-grid"></div>
+
+  <div class="auth-wrap">
+
+    <!-- Brand -->
+    <div class="brand-row">
+      <div class="brand-ico">
+        <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="13" stroke="#00f076" stroke-width="1.8"/>
+          <circle cx="16" cy="16" r="6" fill="#00f076" opacity=".2"/>
+          <circle cx="16" cy="16" r="3" fill="#00f076"/>
+          <line x1="21" y1="21" x2="29" y2="29" stroke="#00f076" stroke-width="2.2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="brand-texts">
+        <div class="brand-name">TT IQ <span style="font-size:.5em;font-weight:600;color:var(--acc);letter-spacing:.01em;font-family:'DM Sans',sans-serif;">by Praanav</span></div>
+        <div class="brand-tag">Table Tennis Intelligence</div>
+      </div>
+    </div>
+
+    <!-- Card -->
+    <div class="auth-card">
+      <div class="tabs">
+        <button class="tab on" id="t-login" onclick="switchTab('login')">Sign In</button>
+        <button class="tab" id="t-signup" onclick="switchTab('signup')">Create Account</button>
+      </div>
+
+      <div class="auth-msg" id="auth-msg"></div>
+
+      <!-- Login form -->
+      <form class="aform" id="f-login" onsubmit="doLogin(event)">
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="l-email" placeholder="you@example.com" required autocomplete="email"/>
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="l-pass" placeholder="••••••••" required/>
+        </div>
+        <button type="submit" class="btn-p">Sign In →</button>
+        <p class="hint">Use the email & password you registered with.</p>
+      </form>
+
+      <!-- Signup form -->
+      <form class="aform hide" id="f-signup" onsubmit="doSignup(event)">
+        <div class="field">
+          <label>Display Name</label>
+          <input type="text" id="s-name" placeholder="e.g. Alex Chen" required/>
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="s-email" placeholder="you@example.com" required autocomplete="email"/>
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="s-pass" placeholder="Min 6 characters" required minlength="6"/>
+        </div>
+        <button type="submit" class="btn-p">Create Account →</button>
+      </form>
+    </div>
+
+    <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme">
+      <span id="theme-ico">☀️</span>
+    </button>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     DASHBOARD PAGE
+══════════════════════════════ -->
+<div class="page" id="pg-dash">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sb-brand">
+      <div class="sb-logo">
+        <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="13" stroke="#00f076" stroke-width="1.8"/>
+          <circle cx="16" cy="16" r="3" fill="#00f076"/>
+          <line x1="21" y1="21" x2="29" y2="29" stroke="#00f076" stroke-width="2.2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span class="sb-name">TT IQ <span style="font-size:.6em;font-weight:600;color:var(--acc);font-family:'DM Sans',sans-serif;">by Praanav</span></span>
+    </div>
+
+    <nav class="sb-nav">
+      <div class="nav-a on" data-sec="overview" onclick="goTo('overview',this)">
+        <span class="nav-ico">⊞</span> Overview
+      </div>
+      <div class="nav-a" data-sec="logger" onclick="goTo('logger',this)">
+        <span class="nav-ico">✦</span> Match Logger
+      </div>
+      <div class="nav-a" data-sec="analytics" onclick="goTo('analytics',this)">
+        <span class="nav-ico">◈</span> Analytics
+      </div>
+      <div class="nav-a" data-sec="quiz" onclick="goTo('quiz',this)">
+        <span class="nav-ico">◉</span> Tactical Quiz
+      </div>
+      <div class="nav-a" data-sec="drills" onclick="goTo('drills',this)">
+        <span class="nav-ico">▸</span> Drill Generator
+      </div>
+      <div class="nav-a" data-sec="about" onclick="goTo('about',this)">
+        <span class="nav-ico">◐</span> About
+      </div>
+      <div class="nav-a" data-sec="coach" onclick="goTo('coach',this)">
+        <span class="nav-ico">🎙</span> Coach Ma
+      </div>
+    </nav>
+
+    <div class="sb-foot">
+      <div class="user-badge">
+        <div class="user-av" id="u-av">A</div>
+        <div class="user-inf">
+          <span class="user-nm" id="u-nm">Player</span>
+          <span class="user-lv">🏓 Beginner</span>
+        </div>
+      </div>
+      <div class="sb-btns">
+        <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme" style="width:34px;height:34px;font-size:.9rem">
+          <span id="theme-ico2">☀️</span>
+        </button>
+        <button class="btn-out" onclick="doLogout()">Sign Out</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- OVERVIEW -->
+    <div class="sec on" id="sec-overview">
+      <div class="sec-hd">
+        <h1 class="sec-title">Overview</h1>
+        <p class="sec-sub" id="greeting">Welcome back.</p>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <span class="stat-lbl">Matches Logged</span>
+          <span class="stat-val" id="s-matches">0</span>
+          <div class="bar-t"><div class="bar-f" style="width:0%"></div></div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-lbl">Win Rate</span>
+          <span class="stat-val hi" id="s-wr">—</span>
+          <div class="bar-t"><div class="bar-f" id="f-wr" style="width:0%"></div></div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-lbl">Quiz Score</span>
+          <span class="stat-val" id="s-quiz">—</span>
+          <div class="bar-t"><div class="bar-f" id="f-quiz" style="width:0%"></div></div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-lbl">Drills Done</span>
+          <span class="stat-val" id="s-drills">0</span>
+          <div class="bar-t"><div class="bar-f" style="width:0%"></div></div>
+        </div>
+      </div>
+
+      <p class="ql-lbl">Quick Actions</p>
+      <div class="act-grid">
+        <div class="act-card" onclick="goTo('logger',null)">
+          <div class="act-ico">✦</div>
+          <div class="act-nm">Log a Match</div>
+          <div class="act-ds">Record rallies, serves & errors</div>
+        </div>
+        <div class="act-card" onclick="goTo('quiz',null)">
+          <div class="act-ico">◉</div>
+          <div class="act-nm">Take a Quiz</div>
+          <div class="act-ds">Test your tactical IQ</div>
+        </div>
+        <div class="act-card" onclick="goTo('drills',null)">
+          <div class="act-ico">▸</div>
+          <div class="act-nm">Generate Drill</div>
+          <div class="act-ds">Build a targeted practice plan</div>
+        </div>
+        <div class="act-card" onclick="goTo('analytics',null)">
+          <div class="act-ico">◈</div>
+          <div class="act-nm">Analytics</div>
+          <div class="act-ds">Spot patterns & weaknesses</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MATCH LOGGER — FEATURE 2 -->
+    <div class="sec" id="sec-logger">
+      <div class="sec-hd">
+        <h1 class="sec-title">Match Logger</h1>
+        <p class="sec-sub">Log every rally in seconds. Track patterns, spot weaknesses.</p>
+      </div>
+
+      <!-- Match meta: opponent + surface + date -->
+      <div class="match-meta">
+        <div class="meta-field">
+          <label>Opponent Name</label>
+          <input type="text" id="ml-opponent" placeholder="e.g. Wang Fang"/>
+        </div>
+        <div class="meta-divider"></div>
+        <div class="meta-field">
+          <label>Surface</label>
+          <select id="ml-surface">
+            <option value="hard">Hard</option>
+            <option value="rubber">Rubber</option>
+            <option value="pips">Pips</option>
+          </select>
+        </div>
+        <div class="meta-divider"></div>
+        <div class="meta-field">
+          <label>Match Date</label>
+          <input type="date" id="ml-date"/>
+        </div>
+      </div>
+
+      <!-- Two-col: rally form + live log -->
+      <div class="logger-layout">
+
+        <!-- LEFT: Rally entry form -->
+        <div class="rally-card">
+          <div class="rally-card-title">
+            Log a Rally
+            <span class="rally-count-badge" id="rally-count-badge">0 logged</span>
+          </div>
+
+          <div class="btn-group">
+            <div class="btn-group-label">Serve Type</div>
+            <div class="btn-group-row" id="grp-serve">
+              <button class="opt-btn" data-val="topspin" onclick="pick('serve',this)">Topspin</button>
+              <button class="opt-btn" data-val="backspin" onclick="pick('serve',this)">Backspin</button>
+              <button class="opt-btn" data-val="sidespin" onclick="pick('serve',this)">Sidespin</button>
+              <button class="opt-btn" data-val="no-spin" onclick="pick('serve',this)">No Spin</button>
+              <button class="opt-btn" data-val="fast" onclick="pick('serve',this)">Fast/Flat</button>
+            </div>
+          </div>
+
+          <div class="btn-group">
+            <div class="btn-group-label">Receive Type</div>
+            <div class="btn-group-row" id="grp-receive">
+              <button class="opt-btn" data-val="push" onclick="pick('receive',this)">Push</button>
+              <button class="opt-btn" data-val="flick" onclick="pick('receive',this)">Flick</button>
+              <button class="opt-btn" data-val="loop" onclick="pick('receive',this)">Loop</button>
+              <button class="opt-btn" data-val="block" onclick="pick('receive',this)">Block</button>
+              <button class="opt-btn" data-val="chop" onclick="pick('receive',this)">Chop</button>
+            </div>
+          </div>
+
+          <div class="btn-group">
+            <div class="btn-group-label">Rally Outcome</div>
+            <div class="btn-group-row" id="grp-outcome">
+              <button class="opt-btn" data-val="winner" onclick="pick('outcome',this)">✦ Winner</button>
+              <button class="opt-btn" data-val="forced" onclick="pick('outcome',this)">⚡ Forced Error</button>
+              <button class="opt-btn" data-val="unforced" onclick="pick('outcome',this)">✕ Unforced Error</button>
+            </div>
+          </div>
+
+          <div class="btn-group" id="grp-location-wrap">
+            <div class="btn-group-label">Error Location</div>
+            <div class="btn-group-row" id="grp-location">
+              <button class="opt-btn" data-val="FH" onclick="pick('location',this)">Forehand</button>
+              <button class="opt-btn" data-val="BH" onclick="pick('location',this)">Backhand</button>
+              <button class="opt-btn" data-val="net" onclick="pick('location',this)">Into Net</button>
+              <button class="opt-btn" data-val="long" onclick="pick('location',this)">Too Long</button>
+              <button class="opt-btn" data-val="wide" onclick="pick('location',this)">Wide</button>
+            </div>
+          </div>
+
+          <div class="btn-group">
+            <div class="btn-group-label">Opponent Weakness Note <span style="color:var(--txt3);font-weight:400;text-transform:none">(optional)</span></div>
+            <textarea class="note-input" id="ml-note" placeholder="e.g. struggled with heavy backspin to BH…"></textarea>
+          </div>
+
+          <div class="form-btns">
+            <button class="btn-add-rally" style="flex:1" onclick="addRally()">+ Add Rally</button>
+            <button class="btn-save-match" onclick="saveMatch()">Save Match</button>
+          </div>
+
+          <div id="logger-msg" style="display:none;font-size:.82rem;padding:8px 12px;border-radius:var(--r);text-align:center"></div>
+        </div>
+
+        <!-- RIGHT: Live rally log -->
+        <div class="log-panel">
+          <div class="log-panel-hd">
+            <span class="log-panel-title">This Match</span>
+            <button class="btn-clear" onclick="clearRallies()">Clear all</button>
+          </div>
+          <div class="log-scroll" id="rally-log">
+            <div class="log-empty" id="log-empty">
+              <span class="log-empty-ico">🏓</span>
+              <span>No rallies yet.<br/>Log your first one →</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Saved matches list -->
+      <div class="matches-section">
+        <p class="ql-lbl">Saved Matches</p>
+        <div class="matches-grid" id="matches-list"></div>
+        <div id="no-matches" style="color:var(--txt3);font-size:.85rem;margin-top:10px;display:none">No saved matches yet.</div>
+      </div>
+
+    </div>
+
+    <!-- ANALYTICS — FEATURE 3 -->
+    <div class="sec" id="sec-analytics">
+      <div class="sec-hd">
+        <h1 class="sec-title">Analytics</h1>
+        <p class="sec-sub">Every rally you log becomes intelligence. Spot patterns, fix weaknesses.</p>
+      </div>
+
+      <!-- Empty state shown when no matches exist -->
+      <div id="an-empty" class="an-empty" style="display:none">
+        <div class="an-empty-ico">◈</div>
+        <p>No match data yet.<br/>Log a match first and your stats will appear here automatically.</p>
+        <button class="btn-p" onclick="goTo('logger',null)">Go to Match Logger →</button>
+      </div>
+
+      <!-- Analytics content (shown when data exists) -->
+      <div id="an-content">
+
+        <!-- KPI row -->
+        <div class="an-kpi-row">
+          <div class="an-kpi">
+            <span class="an-kpi-lbl">Overall Win Rate</span>
+            <span class="an-kpi-val g" id="an-winrate">—</span>
+            <span class="an-kpi-sub" id="an-winrate-sub"></span>
+            <div class="an-bar-t"><div class="an-bar-f g" id="an-bar-wr" style="width:0%"></div></div>
+          </div>
+          <div class="an-kpi">
+            <span class="an-kpi-lbl">Serve Success</span>
+            <span class="an-kpi-val" id="an-serve-rate">—</span>
+            <span class="an-kpi-sub" id="an-serve-sub"></span>
+            <div class="an-bar-t"><div class="an-bar-f b" id="an-bar-srv" style="width:0%"></div></div>
+          </div>
+          <div class="an-kpi">
+            <span class="an-kpi-lbl">Receive Quality</span>
+            <span class="an-kpi-val y" id="an-rcv-rate">—</span>
+            <span class="an-kpi-sub" id="an-rcv-sub"></span>
+            <div class="an-bar-t"><div class="an-bar-f y" id="an-bar-rcv" style="width:0%"></div></div>
+          </div>
+          <div class="an-kpi">
+            <span class="an-kpi-lbl">Unforced Errors</span>
+            <span class="an-kpi-val r" id="an-errors">—</span>
+            <span class="an-kpi-sub" id="an-errors-sub"></span>
+            <div class="an-bar-t"><div class="an-bar-f r" id="an-bar-err" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <!-- Row 2: Serve breakdown + Error heatmap -->
+        <div class="an-grid">
+
+          <!-- Serve breakdown -->
+          <div class="an-panel">
+            <div class="an-panel-title"><span class="an-panel-title-ico">↺</span> Serve Breakdown</div>
+            <div class="serve-bars" id="an-serve-bars">
+              <!-- populated by JS -->
+            </div>
+          </div>
+
+          <!-- Error heatmap -->
+          <div class="an-panel">
+            <div class="an-panel-title"><span class="an-panel-title-ico">⚠</span> Weakness Heatmap</div>
+            <div class="heat-list" id="an-heat-list">
+              <!-- populated by JS -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Row 3: Receive quality + Error location breakdown -->
+        <div class="an-grid">
+
+          <div class="an-panel">
+            <div class="an-panel-title"><span class="an-panel-title-ico">◎</span> Receive by Type</div>
+            <div class="rcv-grid" id="an-rcv-grid">
+              <!-- populated by JS -->
+            </div>
+          </div>
+
+          <div class="an-panel">
+            <div class="an-panel-title"><span class="an-panel-title-ico">✕</span> Errors by Location</div>
+            <div class="error-grid" id="an-error-grid">
+              <!-- populated by JS -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Row 4: Opponent notes (full width) -->
+        <div class="an-panel" id="an-notes-panel" style="margin-top:20px">
+          <div class="an-panel-title"><span class="an-panel-title-ico">📝</span> Opponent Weakness Notes</div>
+          <div class="notes-list" id="an-notes-list">
+            <!-- populated by JS -->
+          </div>
+        </div>
+
+      </div><!-- /an-content -->
+    </div>
+
+    <!-- TACTICAL QUIZ — FEATURE 4 -->
+    <div class="sec" id="sec-quiz">
+      <div class="sec-hd">
+        <h1 class="sec-title">Tactical Quiz</h1>
+        <p class="sec-sub">Read the scenario. Pick the smartest move. Build your tactical IQ.</p>
+      </div>
+
+      <!-- Score header -->
+      <div class="quiz-header">
+        <div class="quiz-score-group">
+          <div class="quiz-score-item">
+            <span class="quiz-score-val g" id="qz-correct">0</span>
+            <span class="quiz-score-lbl">Correct</span>
+          </div>
+          <div class="quiz-score-item">
+            <span class="quiz-score-val r" id="qz-wrong">0</span>
+            <span class="quiz-score-lbl">Wrong</span>
+          </div>
+          <div class="quiz-score-item">
+            <span class="quiz-score-val" id="qz-streak">0🔥</span>
+            <span class="quiz-score-lbl">Streak</span>
+          </div>
+        </div>
+        <div class="quiz-progress-wrap">
+          <div class="quiz-progress-lbl">
+            <span id="qz-prog-lbl">Question 1 of 10</span>
+            <span id="qz-pct">0%</span>
+          </div>
+          <div class="quiz-progress-t">
+            <div class="quiz-progress-f" id="qz-prog-bar" style="width:0%"></div>
+          </div>
+        </div>
+        <button class="btn-quiz-reset" onclick="startQuiz()">↺ New Quiz</button>
+      </div>
+
+      <!-- Question card -->
+      <div class="quiz-card" id="quiz-card">
+        <div class="quiz-q-num" id="qz-num">Question 1 of 10</div>
+        <div class="quiz-scenario">
+          <div class="quiz-scenario-label">🏓 Scenario</div>
+          <div class="quiz-scenario-text" id="qz-scenario"></div>
+        </div>
+        <div class="quiz-question" id="qz-question"></div>
+        <div class="quiz-options" id="qz-options"></div>
+        <div class="quiz-feedback" id="qz-feedback">
+          <div class="quiz-feedback-title" id="qz-fb-title"></div>
+          <div class="quiz-feedback-body" id="qz-fb-body"></div>
+        </div>
+        <button class="btn-quiz-next" id="qz-next" onclick="nextQuestion()">Next Question →</button>
+      </div>
+
+      <!-- End screen -->
+      <div class="quiz-end" id="quiz-end">
+        <div style="font-size:2.5rem" id="qz-end-ico">🏆</div>
+        <div class="quiz-end-score" id="qz-end-score">0/10</div>
+        <div class="quiz-end-label">Final Score</div>
+        <div class="quiz-end-msg" id="qz-end-msg"></div>
+        <div class="quiz-end-btns">
+          <button class="btn-p" onclick="startQuiz()">Play Again →</button>
+          <button class="btn-out" onclick="goTo('drills',null)" style="border:1px solid var(--bdr);border-radius:var(--r);padding:12px 18px;color:var(--txt2);font-size:.88rem">Train Weaknesses</button>
+        </div>
+      </div>
+
+      <!-- Weak tactics log -->
+      <div class="weak-section" id="weak-section">
+        <p class="ql-lbl">Weak Tactics Log</p>
+        <p style="font-size:.82rem;color:var(--txt3);margin-bottom:10px">Questions you answered wrong — review and learn.</p>
+        <div class="weak-list" id="weak-list"></div>
+        <p id="weak-empty" style="font-size:.85rem;color:var(--txt3);display:none">No wrong answers yet — great work!</p>
+      </div>
+
+    </div>
+
+    <!-- DRILL GENERATOR — FEATURE 5 -->
+    <div class="sec" id="sec-drills">
+      <div class="sec-hd">
+        <h1 class="sec-title">Drill Generator</h1>
+        <p class="sec-sub">Tell it your weakness. It builds your training session.</p>
+      </div>
+
+      <div class="drill-layout">
+
+        <!-- Form -->
+        <div class="drill-form-card">
+          <div class="drill-form-title">Generate a Drill Plan</div>
+
+          <div class="drill-field">
+            <label>Your Weakness</label>
+            <div class="drill-tag-row" id="drg-weakness">
+              <div class="drill-tag" data-val="backhand-errors" onclick="drillPick('weakness',this)">Backhand Errors</div>
+              <div class="drill-tag" data-val="forehand-errors" onclick="drillPick('weakness',this)">Forehand Errors</div>
+              <div class="drill-tag" data-val="serve-receive" onclick="drillPick('weakness',this)">Serve Receive</div>
+              <div class="drill-tag" data-val="short-game" onclick="drillPick('weakness',this)">Short Game</div>
+              <div class="drill-tag" data-val="mental-pressure" onclick="drillPick('weakness',this)">Mental Pressure</div>
+              <div class="drill-tag" data-val="footwork" onclick="drillPick('weakness',this)">Footwork</div>
+              <div class="drill-tag" data-val="attack-consistency" onclick="drillPick('weakness',this)">Attack Consistency</div>
+              <div class="drill-tag" data-val="third-ball" onclick="drillPick('weakness',this)">3rd Ball Attack</div>
+            </div>
+          </div>
+
+          <div class="drill-field">
+            <label>Time Available</label>
+            <select id="drg-time">
+              <option value="15">15 minutes</option>
+              <option value="30" selected>30 minutes</option>
+              <option value="45">45 minutes</option>
+              <option value="60">60 minutes</option>
+              <option value="90">90 minutes</option>
+            </select>
+          </div>
+
+          <div class="drill-field">
+            <label>Training Mode</label>
+            <div class="drill-tag-row" id="drg-mode">
+              <div class="drill-tag on" data-val="solo" onclick="drillPick('mode',this)">Solo</div>
+              <div class="drill-tag" data-val="partner" onclick="drillPick('mode',this)">With Partner</div>
+              <div class="drill-tag" data-val="robot" onclick="drillPick('mode',this)">With Robot</div>
+            </div>
+          </div>
+
+          <div class="drill-field">
+            <label>Intensity</label>
+            <div class="drill-tag-row" id="drg-intensity">
+              <div class="drill-tag" data-val="light" onclick="drillPick('intensity',this)">Light</div>
+              <div class="drill-tag on" data-val="medium" onclick="drillPick('intensity',this)">Medium</div>
+              <div class="drill-tag" data-val="hard" onclick="drillPick('intensity',this)">Hard</div>
+            </div>
+          </div>
+
+          <button class="btn-gen-drill" onclick="generateDrill()">Generate Drill Plan →</button>
+        </div>
+
+        <!-- Output -->
+        <div class="drill-output" id="drill-output">
+          <div class="drill-output-empty" id="drill-empty">
+            <span class="drill-output-empty-ico">▸</span>
+            <span style="font-size:.9rem">Select your weakness and generate<br/>a structured drill plan.</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Saved drills -->
+      <div class="saved-drills-section">
+        <p class="ql-lbl">Saved Drill Plans</p>
+        <div id="saved-drills-list"></div>
+        <p id="saved-drills-empty" style="font-size:.85rem;color:var(--txt3);margin-top:8px;display:none">No saved plans yet.</p>
+      </div>
+    </div>
+
+    <!-- ABOUT — PRAANAV -->
+    <div class="sec" id="sec-about">
+      <div class="sec-hd">
+        <h1 class="sec-title">About</h1>
+        <p class="sec-sub">The player behind the platform.</p>
+      </div>
+
+      <div class="about-layout">
+
+        <!-- Profile card -->
+        <div class="about-profile-card">
+          <div class="about-avatar">P</div>
+          <div>
+            <div class="about-name">Praanav</div>
+            <div class="about-handle">Table Tennis Player · UAE</div>
+          </div>
+          <div class="about-divider"></div>
+          <div class="about-stat-row">
+            <div class="about-stat">
+              <span class="about-stat-val">5</span>
+              <span class="about-stat-lbl">Years</span>
+            </div>
+            <div class="about-stat">
+              <span class="about-stat-val">3</span>
+              <span class="about-stat-lbl">Teams</span>
+            </div>
+            <div class="about-stat">
+              <span class="about-stat-val">18</span>
+              <span class="about-stat-lbl">Age</span>
+            </div>
+          </div>
+          <div class="about-divider"></div>
+          <div class="about-badge-row">
+            <span class="about-badge hi">🏓 Competitive Player</span>
+            <span class="about-badge">U15 · U17 · U19</span>
+            <span class="about-badge">Shabab Al Ahli</span>
+            <span class="about-badge hi">🏆 Multi-Award Winner</span>
+            <span class="about-badge">Builder</span>
+          </div>
+        </div>
+
+        <!-- Content column -->
+        <div class="about-content-col">
+
+          <!-- Quote -->
+          <div class="about-quote">
+            <div class="about-quote-text">
+              I could hit high quality balls. I was physically fit. But I kept feeling one step behind during matches. That feeling is what built TT IQ.
+            </div>
+            <div class="about-quote-author">— Praanav</div>
+          </div>
+
+          <!-- Story -->
+          <div class="about-block">
+            <div class="about-block-title"><span class="about-block-title-ico">◎</span> The Story</div>
+            <div class="about-body">
+              I started playing table tennis at <strong>13 years old</strong>. By 15 I was competing for <strong>Shabab Al Ahli</strong> at the U15 level, and went on to represent the club at U17 and U19. I played competitively from <strong>2022 to 2024</strong>, and again from <strong>2025 to 2026</strong>, picking up multiple awards both in club competitions and individual tournaments.<br/><br/>
+              But throughout all of it, something nagged at me. Even when my technique was sharp and my fitness was good, I'd lose points I shouldn't — not because of physical failure, but because of <strong>tactical and mental gaps</strong>. I'd make the wrong decision under pressure. I'd miss patterns in my opponent's game. I'd tighten up at 9-10 in the fifth.<br/><br/>
+              No app existed that addressed this properly for players at my level. So I built one.
+            </div>
+          </div>
+
+          <!-- Timeline -->
+          <div class="about-block">
+            <div class="about-block-title"><span class="about-block-title-ico">◈</span> Career Timeline</div>
+            <div class="about-timeline">
+              <div class="about-tl-item">
+                <div class="about-tl-left"><div class="about-tl-dot"></div><div class="about-tl-line"></div></div>
+                <div class="about-tl-right">
+                  <div class="about-tl-year">Age 13 · 2020</div>
+                  <div class="about-tl-event">Started playing table tennis</div>
+                  <div class="about-tl-sub">Fell in love with the game immediately</div>
+                </div>
+              </div>
+              <div class="about-tl-item">
+                <div class="about-tl-left"><div class="about-tl-dot"></div><div class="about-tl-line"></div></div>
+                <div class="about-tl-right">
+                  <div class="about-tl-year">2022 – 2024</div>
+                  <div class="about-tl-event">Shabab Al Ahli — U15 &amp; U17 Squad</div>
+                  <div class="about-tl-sub">Club + individual awards. First taste of competitive pressure.</div>
+                </div>
+              </div>
+              <div class="about-tl-item">
+                <div class="about-tl-left"><div class="about-tl-dot"></div><div class="about-tl-line"></div></div>
+                <div class="about-tl-right">
+                  <div class="about-tl-year">2025 – 2026</div>
+                  <div class="about-tl-event">Shabab Al Ahli — U19 Squad</div>
+                  <div class="about-tl-sub">Returned to competitive play at senior junior level</div>
+                </div>
+              </div>
+              <div class="about-tl-item">
+                <div class="about-tl-left"><div class="about-tl-dot"></div></div>
+                <div class="about-tl-right">
+                  <div class="about-tl-year">2026</div>
+                  <div class="about-tl-event">Built TT IQ</div>
+                  <div class="about-tl-sub">Turned frustration into a tool for every player who's ever felt one step behind.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- What TT IQ solves -->
+          <div class="about-block">
+            <div class="about-block-title"><span class="about-block-title-ico">✦</span> What TT IQ Fixes</div>
+            <div class="about-body">
+              TT IQ is built around the gap between physical ability and match performance. The tools inside target exactly what I was missing:<br/><br/>
+              <strong>Match Logger</strong> — turns every rally into data so patterns become visible, not just felt.<br/>
+              <strong>Analytics</strong> — surfaces your real weaknesses, not the ones you assume you have.<br/>
+              <strong>Tactical Quiz</strong> — trains your in-match decision-making so the right choice becomes instinctive.<br/>
+              <strong>Drill Generator</strong> — converts identified weaknesses into structured, purposeful practice sessions.<br/><br/>
+              This is the platform I wish existed when I was 15. It's for anyone who takes the game seriously.
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+
+    <!-- COACH MA — AI ANALYSIS -->
+    <div class="sec" id="sec-coach">
+      <div class="sec-hd">
+        <h1 class="sec-title">Coach Ma</h1>
+        <p class="sec-sub">World-class AI coaching. Chinese national team methodology. Zero sugar-coating.</p>
+      </div>
+
+      <!-- Coach identity -->
+      <div class="coach-id">
+        <div class="coach-avatar">🏓</div>
+        <div class="coach-meta">
+          <div class="coach-name">Coach Ma — AI Tactical Analyst</div>
+          <div class="coach-title">Chinese National Team Coaching Philosophy · Pattern Recognition · Mental Conditioning</div>
+        </div>
+        <div class="coach-status">
+          <div class="coach-status-dot"></div>
+          Ready to analyse
+        </div>
+      </div>
+
+      <!-- Mode switcher -->
+      <div class="coach-mode-tabs">
+        <div class="coach-tab on" id="ctab-video" onclick="switchCoachMode('video')">
+          <div class="coach-tab-ico">📹</div>
+          <div class="coach-tab-name">Match Video Analysis</div>
+          <div class="coach-tab-desc">Paste a YouTube link, describe what you observed, get a full coaching report</div>
+        </div>
+        <div class="coach-tab" id="ctab-rally" onclick="switchCoachMode('rally')">
+          <div class="coach-tab-ico">💬</div>
+          <div class="coach-tab-name">Rally Debrief</div>
+          <div class="coach-tab-desc">Describe any match situation and Coach Ma breaks it down tactically</div>
+        </div>
+      </div>
+
+      <!-- ── MODE B: Video Analysis ── -->
+      <div class="coach-panel on" id="cpanel-video">
+
+        <!-- YouTube link input -->
+        <div class="yt-input-row">
+          <input class="yt-input" id="yt-url" placeholder="Paste YouTube match URL — e.g. https://youtube.com/watch?v=..." />
+          <button class="btn-load-yt" onclick="loadYouTube()">Load Video</button>
+        </div>
+
+        <!-- Embedded player -->
+        <div class="yt-embed-wrap" id="yt-embed-wrap">
+          <iframe id="yt-iframe" src="" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+        </div>
+
+        <!-- Observation form -->
+        <div class="obs-grid">
+          <div class="obs-field">
+            <label class="obs-label">Match Result</label>
+            <select class="obs-select" id="obs-result">
+              <option value="">Select...</option>
+              <option value="won">I Won</option>
+              <option value="lost">I Lost</option>
+              <option value="drew">Split sets / undecided</option>
+            </select>
+          </div>
+          <div class="obs-field">
+            <label class="obs-label">Opponent Style</label>
+            <select class="obs-select" id="obs-style">
+              <option value="">Select...</option>
+              <option value="aggressive-looper">Aggressive Looper</option>
+              <option value="defensive-chopper">Defensive Chopper</option>
+              <option value="all-round">All-Round Player</option>
+              <option value="blocker">Blocker / Counter</option>
+              <option value="serve-dominant">Serve Dominant</option>
+              <option value="penhold">Penhold Style</option>
+            </select>
+          </div>
+          <div class="obs-field full">
+            <label class="obs-label">Your Serve Patterns — What did you serve? What worked? What didn't?</label>
+            <textarea class="obs-textarea" id="obs-serve" rows="3" placeholder="e.g. I used heavy backspin short serves mostly. They struggled with sidespin to their BH but handled topspin serves well..."></textarea>
+          </div>
+          <div class="obs-field full">
+            <label class="obs-label">Rally Patterns — How did points play out? Where did you win and lose?</label>
+            <textarea class="obs-textarea" id="obs-rallies" rows="3" placeholder="e.g. I was winning short rallies under 4 shots but losing long rallies. They kept looping to my wide FH and I couldn't recover position..."></textarea>
+          </div>
+          <div class="obs-field full">
+            <label class="obs-label">Mental Moments — Key pressure points, turnarounds, momentum shifts</label>
+            <textarea class="obs-textarea" id="obs-mental" rows="2" placeholder="e.g. I was 9-6 up in the 3rd and tightened up, lost 4 in a row. Kept thinking about the score instead of the next ball..."></textarea>
+          </div>
+          <div class="obs-field full">
+            <label class="obs-label">Opponent Weaknesses You Noticed</label>
+            <textarea class="obs-textarea" id="obs-opp" rows="2" placeholder="e.g. Struggled with heavy backspin, moved slowly to their wide BH, double-faulted under pressure..."></textarea>
+          </div>
+          <div class="obs-field full">
+            <label class="obs-label">Anything Else — Technical issues, physical, equipment, anything</label>
+            <textarea class="obs-textarea" id="obs-other" rows="2" placeholder="e.g. My BH loop kept going wide, rubber felt slower than usual, back was tight in 4th set..."></textarea>
+          </div>
+        </div>
+
+        <button class="btn-analyse" id="btn-analyse-video" onclick="analyseMatch()">
+          🎙 Get Coach Ma's Full Report
+        </button>
+      </div>
+
+      <!-- ── MODE C: Rally Debrief ── -->
+      <div class="coach-panel" id="cpanel-rally">
+
+        <p style="font-size:.82rem;color:var(--txt3);margin-bottom:12px">
+          Describe any match situation, tactical dilemma, or thing you keep getting wrong. Coach Ma responds with Chinese-level precision.
+        </p>
+
+        <!-- Quick example prompts -->
+        <div class="debrief-examples">
+          <div class="debrief-ex" onclick="fillDebrief(this)">I keep losing points when opponent serves short backspin to my BH</div>
+          <div class="debrief-ex" onclick="fillDebrief(this)">I was 9-6 up and lost 5 straight — what happened mentally?</div>
+          <div class="debrief-ex" onclick="fillDebrief(this)">My FH loop keeps going into the net on heavy backspin</div>
+          <div class="debrief-ex" onclick="fillDebrief(this)">How do I beat a defensive chopper who gets everything back?</div>
+          <div class="debrief-ex" onclick="fillDebrief(this)">Opponent keeps stepping around and attacking my serve with FH loop</div>
+          <div class="debrief-ex" onclick="fillDebrief(this)">I tighten up in deuce situations and make unforced errors</div>
+        </div>
+
+        <div class="debrief-input-wrap">
+          <textarea class="debrief-textarea" id="debrief-input" placeholder="Describe the situation, rally, or problem in as much detail as you can. The more specific you are, the more precise Coach Ma's analysis will be..."></textarea>
+        </div>
+
+        <button class="btn-analyse" id="btn-analyse-rally" onclick="analyseRally()">
+          🎙 Analyse This →
+        </button>
+      </div>
+
+      <!-- Loading indicator -->
+      <div class="coach-loading" id="coach-loading">
+        <div class="loading-dots">
+          <div class="loading-dot"></div>
+          <div class="loading-dot"></div>
+          <div class="loading-dot"></div>
+        </div>
+        Coach Ma is analysing...
+      </div>
+
+      <!-- Response area -->
+      <div class="coach-response" id="coach-response">
+        <div class="coach-response-header">
+          <div class="coach-response-avatar">🏓</div>
+          <div>
+            <div class="coach-response-name">Coach Ma</div>
+            <div class="coach-response-sub" id="coach-response-sub">Analysis Report</div>
+          </div>
+        </div>
+        <div class="coach-report" id="coach-report"></div>
+      </div>
+
+      <!-- Analysis history -->
+      <div class="coach-history" id="coach-history-wrap">
+        <p class="ql-lbl" style="margin-bottom:0">Previous Analyses</p>
+        <div id="coach-history-list"></div>
+        <p id="coach-history-empty" style="font-size:.83rem;color:var(--txt3);margin-top:8px;display:none">No analyses yet.</p>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+<script>
+/* ══════════════════════════════════════════
+   STORAGE HELPERS
+══════════════════════════════════════════ */
+const store = {
+  get: k => { try { return JSON.parse(localStorage.getItem(k)) } catch { return null } },
+  set: (k,v) => localStorage.setItem(k, JSON.stringify(v)),
+  del: k => localStorage.removeItem(k)
+}
+
+/* ══════════════════════════════════════════
+   THEME
+══════════════════════════════════════════ */
+function applyTheme() {
+  const t = store.get('tt_theme') || 'dark'
+  document.documentElement.setAttribute('data-theme', t)
+  document.querySelectorAll('#theme-ico,#theme-ico2').forEach(el => el.textContent = t === 'dark' ? '☀️' : '🌙')
+}
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme')
+  const nxt = cur === 'dark' ? 'light' : 'dark'
+  store.set('tt_theme', nxt)
+  applyTheme()
+}
+applyTheme()
+
+/* ══════════════════════════════════════════
+   AUTH
+══════════════════════════════════════════ */
+function getSession() { return store.get('tt_session') }
+function setSession(u) { store.set('tt_session', { name: u.name, email: u.email }) }
+function clearSession() { store.del('tt_session') }
+function getUsers() { return store.get('tt_users') || [] }
+function saveUsers(us) { store.set('tt_users', us) }
+function findUser(email) { return getUsers().find(u => u.email.toLowerCase() === email.toLowerCase()) }
+
+function showMsg(text, type) {
+  const el = document.getElementById('auth-msg')
+  el.textContent = text
+  el.className = 'auth-msg ' + type
+}
+
+function switchTab(tab) {
+  document.getElementById('f-login').classList.toggle('hide', tab !== 'login')
+  document.getElementById('f-signup').classList.toggle('hide', tab !== 'signup')
+  document.getElementById('t-login').classList.toggle('on', tab === 'login')
+  document.getElementById('t-signup').classList.toggle('on', tab === 'signup')
+  const el = document.getElementById('auth-msg')
+  el.className = 'auth-msg'; el.textContent = ''
+}
+
+function doLogin(e) {
+  e.preventDefault()
+  const email = document.getElementById('l-email').value.trim()
+  const pass  = document.getElementById('l-pass').value
+  const user  = findUser(email)
+  if (!user)           return showMsg('No account found with that email.', 'err')
+  if (user.password !== pass) return showMsg('Incorrect password.', 'err')
+  setSession(user)
+  openDash()
+}
+
+function doSignup(e) {
+  e.preventDefault()
+  const name  = document.getElementById('s-name').value.trim()
+  const email = document.getElementById('s-email').value.trim()
+  const pass  = document.getElementById('s-pass').value
+  if (findUser(email)) return showMsg('An account with that email already exists.', 'err')
+  const users = getUsers()
+  users.push({ name, email, password: pass })
+  saveUsers(users)
+  setSession({ name, email })
+  openDash()
+}
+
+function doLogout() {
+  clearSession()
+  document.getElementById('pg-dash').classList.remove('on')
+  document.getElementById('pg-auth').classList.add('on')
+  document.getElementById('f-login').reset()
+  switchTab('login')
+}
+
+/* ══════════════════════════════════════════
+   DASHBOARD
+══════════════════════════════════════════ */
+function openDash() {
+  document.getElementById('pg-auth').classList.remove('on')
+  document.getElementById('pg-dash').classList.add('on')
+  initDash()
+}
+
+function goTo(sec, el) {
+  document.querySelectorAll('.sec').forEach(s => s.classList.remove('on'))
+  document.getElementById('sec-' + sec).classList.add('on')
+  document.querySelectorAll('.nav-a').forEach(a => a.classList.remove('on'))
+  if (el) el.classList.add('on')
+  else {
+    const match = document.querySelector(`.nav-a[data-sec="${sec}"]`)
+    if (match) match.classList.add('on')
+  }
+  if (sec === 'logger')    initLogger()
+  if (sec === 'analytics') initAnalytics()
+  if (sec === 'quiz')      initQuiz()
+  if (sec === 'drills')    initDrills()
+  if (sec === 'coach')     initCoach()
+}
+
+function refreshOverviewStats() {
+  const matches = store.get('tt_matches') || []
+  document.getElementById('s-matches').textContent = matches.length
+  const rallies = matches.flatMap(m => m.rallies || [])
+  const wins = rallies.filter(r => r.outcome === 'winner').length
+  if (rallies.length > 0) {
+    const wr = Math.round(wins / rallies.length * 100)
+    document.getElementById('s-wr').textContent = wr + '%'
+    document.getElementById('f-wr').style.width = wr + '%'
+  }
+  const quiz = store.get('tt_quiz')
+  if (quiz && quiz.total > 0) {
+    const pct = Math.round(quiz.correct / quiz.total * 100)
+    document.getElementById('s-quiz').textContent = pct + '%'
+    document.getElementById('f-quiz').style.width = pct + '%'
+  }
+  document.getElementById('s-drills').textContent = store.get('tt_drills_done') || 0
+}
+
+function initDash() {
+  const s = getSession()
+  if (!s) return
+  document.getElementById('u-nm').textContent = s.name
+  document.getElementById('u-av').textContent = s.name.charAt(0).toUpperCase()
+  const h = new Date().getHours()
+  const part = h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening'
+  document.getElementById('greeting').textContent = `Good ${part}, ${s.name.split(' ')[0]}.`
+  refreshOverviewStats()
+}
+
+/* ══════════════════════════════════════════
+   INIT — check existing session on load
+══════════════════════════════════════════ */
+;(function init() {
+  const s = getSession()
+  if (s) {
+    document.getElementById('pg-auth').classList.remove('on')
+    document.getElementById('pg-dash').classList.add('on')
+    initDash()
+  }
+})()
+
+/* ══════════════════════════════════════════
+   MATCH LOGGER — FEATURE 2
+══════════════════════════════════════════ */
+
+const picks = { serve: null, receive: null, outcome: null, location: null }
+let currentRallies = []
+
+function initLogger() {
+  const d = document.getElementById('ml-date')
+  if (d && !d.value) d.value = new Date().toISOString().split('T')[0]
+  renderRallyLog()
+  renderMatchesList()
+}
+
+function pick(group, btn) {
+  btn.closest('.btn-group-row').querySelectorAll('.opt-btn').forEach(b => b.classList.remove('on'))
+  btn.classList.add('on')
+  picks[group] = btn.dataset.val
+  if (group === 'outcome') {
+    const locWrap = document.getElementById('grp-location-wrap')
+    if (picks.outcome === 'winner') {
+      locWrap.style.opacity = '.4'
+      locWrap.style.pointerEvents = 'none'
+      picks.location = null
+      document.querySelectorAll('#grp-location .opt-btn').forEach(b => b.classList.remove('on'))
+    } else {
+      locWrap.style.opacity = '1'
+      locWrap.style.pointerEvents = 'auto'
+    }
+  }
+}
+
+function addRally() {
+  if (!picks.serve)   return flashMsg('Please select a serve type.', 'err')
+  if (!picks.outcome) return flashMsg('Please select a rally outcome.', 'err')
+  const rally = {
+    id: Date.now(),
+    serve:    picks.serve,
+    receive:  picks.receive,
+    outcome:  picks.outcome,
+    location: picks.outcome !== 'winner' ? picks.location : null,
+    note:     document.getElementById('ml-note').value.trim()
+  }
+  currentRallies.push(rally)
+  renderRallyLog()
+  resetPicks()
+  document.getElementById('ml-note').value = ''
+  flashMsg('Rally logged ✓', 'ok')
+}
+
+function resetPicks() {
+  picks.serve = picks.receive = picks.outcome = picks.location = null
+  document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('on'))
+  const locWrap = document.getElementById('grp-location-wrap')
+  locWrap.style.opacity = '1'
+  locWrap.style.pointerEvents = 'auto'
+}
+
+function renderRallyLog() {
+  const log   = document.getElementById('rally-log')
+  const empty = document.getElementById('log-empty')
+  const badge = document.getElementById('rally-count-badge')
+  badge.textContent = currentRallies.length + ' logged'
+  if (currentRallies.length === 0) {
+    empty.style.display = 'flex'
+    log.querySelectorAll('.rally-row').forEach(r => r.remove())
+    return
+  }
+  empty.style.display = 'none'
+  log.querySelectorAll('.rally-row').forEach(r => r.remove())
+  currentRallies.forEach((r, i) => {
+    const row = document.createElement('div')
+    row.className = 'rally-row'
+    row.innerHTML = `
+      <span class="rally-num">${i + 1}</span>
+      <div class="rally-tags">
+        <span class="tag">${r.serve}</span>
+        ${r.receive ? `<span class="tag">${r.receive}</span>` : ''}
+        <span class="tag ${r.outcome}">${outcomeLabel(r.outcome)}</span>
+        ${r.location ? `<span class="tag">${r.location}</span>` : ''}
+        ${r.note ? `<span class="tag" title="${r.note}" style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📝 ${r.note}</span>` : ''}
+      </div>
+      <button class="rally-del" onclick="deleteRally(${r.id})">✕</button>
+    `
+    log.appendChild(row)
+  })
+  log.scrollTop = log.scrollHeight
+}
+
+function outcomeLabel(o) {
+  return o === 'winner' ? '✦ Winner' : o === 'forced' ? '⚡ Forced' : '✕ Unforced'
+}
+
+function deleteRally(id) {
+  currentRallies = currentRallies.filter(r => r.id !== id)
+  renderRallyLog()
+}
+
+function clearRallies() {
+  if (currentRallies.length === 0) return
+  if (!confirm('Clear all rallies from this session?')) return
+  currentRallies = []
+  renderRallyLog()
+}
+
+function saveMatch() {
+  if (currentRallies.length === 0) return flashMsg('Log at least one rally before saving.', 'err')
+  const match = {
+    id:       Date.now(),
+    opponent: document.getElementById('ml-opponent').value.trim() || 'Unknown',
+    surface:  document.getElementById('ml-surface').value,
+    date:     document.getElementById('ml-date').value || new Date().toISOString().split('T')[0],
+    rallies:  [...currentRallies]
+  }
+  const matches = store.get('tt_matches') || []
+  matches.push(match)
+  store.set('tt_matches', matches)
+  currentRallies = []
+  document.getElementById('ml-opponent').value = ''
+  resetPicks()
+  document.getElementById('ml-note').value = ''
+  renderRallyLog()
+  renderMatchesList()
+  refreshOverviewStats()
+  flashMsg(`Match vs "${match.opponent}" saved! ✓`, 'ok')
+}
+
+function renderMatchesList() {
+  const list     = document.getElementById('matches-list')
+  const noMatch  = document.getElementById('no-matches')
+  const matches  = store.get('tt_matches') || []
+  list.innerHTML = ''
+  if (matches.length === 0) {
+    noMatch.style.display = 'block'
+    return
+  }
+  noMatch.style.display = 'none'
+  ;[...matches].reverse().forEach(m => {
+    const rallies  = m.rallies || []
+    const winners  = rallies.filter(r => r.outcome === 'winner').length
+    const errors   = rallies.filter(r => r.outcome === 'unforced').length
+    const wr       = rallies.length ? Math.round(winners / rallies.length * 100) : 0
+    const row = document.createElement('div')
+    row.className = 'match-row'
+    row.innerHTML = `
+      <div class="match-row-left">
+        <div class="match-vs">vs ${m.opponent}</div>
+        <div class="match-meta-tags">
+          <span class="match-meta-tag">📅 ${m.date}</span>
+          <span class="match-meta-tag">· ${m.surface}</span>
+          <span class="match-meta-tag">· ${rallies.length} rallies</span>
+        </div>
+      </div>
+      <div class="match-row-stats">
+        <div class="match-stat">
+          <span class="match-stat-val g">${wr}%</span>
+          <span class="match-stat-lbl">Win Rate</span>
+        </div>
+        <div class="match-stat">
+          <span class="match-stat-val">${winners}</span>
+          <span class="match-stat-lbl">Winners</span>
+        </div>
+        <div class="match-stat">
+          <span class="match-stat-val r">${errors}</span>
+          <span class="match-stat-lbl">Errors</span>
+        </div>
+      </div>
+      <button class="match-del-btn" onclick="deleteMatch(${m.id})">Delete</button>
+    `
+    list.appendChild(row)
+  })
+}
+
+function deleteMatch(id) {
+  if (!confirm('Delete this match?')) return
+  const matches = (store.get('tt_matches') || []).filter(m => m.id !== id)
+  store.set('tt_matches', matches)
+  renderMatchesList()
+  refreshOverviewStats()
+}
+
+function flashMsg(text, type) {
+  const el = document.getElementById('logger-msg')
+  el.textContent = text
+  el.style.display = 'block'
+  el.style.background = type === 'ok' ? 'var(--acc-d)' : 'var(--red-d)'
+  el.style.color       = type === 'ok' ? 'var(--acc)'   : 'var(--red)'
+  el.style.border      = type === 'ok' ? '1px solid var(--acc-g)' : '1px solid rgba(255,63,94,.3)'
+  clearTimeout(el._t)
+  el._t = setTimeout(() => el.style.display = 'none', 2800)
+}
+
+
+
+/* ══════════════════════════════════════════
+   ANALYTICS — FEATURE 3
+══════════════════════════════════════════ */
+
+function initAnalytics() {
+  const matches = store.get('tt_matches') || []
+  const rallies = matches.flatMap(m => m.rallies || [])
+  const emptyEl   = document.getElementById('an-empty')
+  const contentEl = document.getElementById('an-content')
+  if (rallies.length === 0) {
+    emptyEl.style.display = 'flex'
+    contentEl.style.display = 'none'
+    return
+  }
+  emptyEl.style.display = 'none'
+  contentEl.style.display = 'block'
+
+  const total    = rallies.length
+  const winners  = rallies.filter(r => r.outcome === 'winner').length
+  const forced   = rallies.filter(r => r.outcome === 'forced').length
+  const unforced = rallies.filter(r => r.outcome === 'unforced').length
+  const winPct   = pct(winners, total)
+  const errPct   = pct(unforced, total)
+
+  setText('an-winrate', winPct + '%')
+  setText('an-winrate-sub', winners + ' winners from ' + total + ' rallies')
+  setWidth('an-bar-wr', winPct)
+
+  const serveWins = rallies.filter(r => r.outcome === 'winner' || r.outcome === 'forced').length
+  const srvPct = pct(serveWins, total)
+  setText('an-serve-rate', srvPct + '%')
+  setText('an-serve-sub', 'winners + forced errors / total')
+  setWidth('an-bar-srv', srvPct)
+
+  const withReceive = rallies.filter(r => r.receive)
+  const rcvGood = withReceive.filter(r => r.outcome !== 'unforced').length
+  const rcvPct = withReceive.length > 0 ? pct(rcvGood, withReceive.length) : 0
+  setText('an-rcv-rate', withReceive.length > 0 ? rcvPct + '%' : '—')
+  setText('an-rcv-sub', withReceive.length + ' receives logged')
+  setWidth('an-bar-rcv', rcvPct)
+
+  setText('an-errors', unforced)
+  setText('an-errors-sub', errPct + '% of all rallies')
+  setWidth('an-bar-err', errPct)
+
+  const serveTypes = ['topspin','backspin','sidespin','no-spin','fast']
+  const serveLabels = { 'topspin':'Topspin','backspin':'Backspin','sidespin':'Sidespin','no-spin':'No Spin','fast':'Fast/Flat' }
+  const serveCounts = {}
+  serveTypes.forEach(t => serveCounts[t] = rallies.filter(r => r.serve === t).length)
+  const maxServe = Math.max(...Object.values(serveCounts), 1)
+  const serveBarsEl = document.getElementById('an-serve-bars')
+  serveBarsEl.innerHTML = ''
+  serveTypes.forEach(t => {
+    const c = serveCounts[t]
+    if (c === 0) return
+    const w = Math.round(c / maxServe * 100)
+    serveBarsEl.innerHTML += `
+      <div class="serve-bar-row">
+        <span class="serve-bar-lbl">${serveLabels[t]}</span>
+        <div class="serve-bar-track"><div class="serve-bar-fill" style="width:${w}%"></div></div>
+        <span class="serve-bar-pct">${c}</span>
+      </div>`
+  })
+  if (serveBarsEl.innerHTML === '') serveBarsEl.innerHTML = '<span style="color:var(--txt3);font-size:.85rem">No serve data yet.</span>'
+
+  const heatMap = {}
+  rallies.filter(r => r.outcome !== 'winner' && r.location).forEach(r => {
+    const key = r.location + ' (' + (r.outcome === 'unforced' ? 'Unforced' : 'Forced') + ')'
+    heatMap[key] = (heatMap[key] || 0) + 1
+  })
+  const heatSorted = Object.entries(heatMap).sort((a,b) => b[1]-a[1]).slice(0,5)
+  const maxHeat = heatSorted.length ? heatSorted[0][1] : 1
+  const heatEl = document.getElementById('an-heat-list')
+  heatEl.innerHTML = ''
+  if (heatSorted.length === 0) {
+    heatEl.innerHTML = '<span style="color:var(--txt3);font-size:.85rem">Not enough error data yet.</span>'
+  } else {
+    heatSorted.forEach(([label, count], i) => {
+      const w = Math.round(count / maxHeat * 100)
+      heatEl.innerHTML += `
+        <div class="heat-row">
+          <span class="heat-rank">#${i+1}</span>
+          <span class="heat-label">${label}</span>
+          <span class="heat-count">${count}×</span>
+          <div class="heat-bar-wrap">
+            <div class="heat-bar-t"><div class="heat-bar-f" style="width:${w}%"></div></div>
+          </div>
+        </div>`
+    })
+  }
+
+  const rcvTypes  = ['push','flick','loop','block','chop']
+  const rcvLabels = { push:'Push',flick:'Flick',loop:'Loop',block:'Block',chop:'Chop' }
+  const rcvEl = document.getElementById('an-rcv-grid')
+  rcvEl.innerHTML = ''
+  rcvTypes.forEach(t => {
+    const ralliesOfType = rallies.filter(r => r.receive === t)
+    if (ralliesOfType.length === 0) return
+    const good = ralliesOfType.filter(r => r.outcome !== 'unforced').length
+    const q    = pct(good, ralliesOfType.length)
+    const col  = q >= 60 ? 'var(--acc)' : q >= 40 ? 'var(--ylw)' : 'var(--red)'
+    rcvEl.innerHTML += `
+      <div class="rcv-cell">
+        <span class="rcv-cell-lbl">${rcvLabels[t]}</span>
+        <span class="rcv-cell-val" style="color:${col}">${q}%</span>
+        <span style="font-size:.7rem;color:var(--txt3)">${ralliesOfType.length} rallies</span>
+      </div>`
+  })
+  if (rcvEl.innerHTML === '') rcvEl.innerHTML = '<span style="color:var(--txt3);font-size:.85rem;grid-column:1/-1">No receive data yet.</span>'
+
+  const locTypes  = ['FH','BH','net','long','wide']
+  const locLabels = { FH:'Forehand',BH:'Backhand',net:'Into Net',long:'Too Long',wide:'Wide' }
+  const locEl = document.getElementById('an-error-grid')
+  const errorRallies = rallies.filter(r => r.outcome !== 'winner' && r.location)
+  locEl.innerHTML = ''
+  locTypes.forEach(l => {
+    const c = errorRallies.filter(r => r.location === l).length
+    if (c === 0) return
+    const p2 = pct(c, errorRallies.length)
+    locEl.innerHTML += `
+      <div class="error-cell">
+        <span class="error-cell-lbl">${locLabels[l]}</span>
+        <span class="error-cell-val">${c}</span>
+        <span class="error-cell-sub">${p2}% of errors</span>
+      </div>`
+  })
+  if (locEl.innerHTML === '') locEl.innerHTML = '<span style="color:var(--txt3);font-size:.85rem">No error location data yet.</span>'
+
+  const noteEl = document.getElementById('an-notes-list')
+  const notesPanel = document.getElementById('an-notes-panel')
+  const allNotes = []
+  matches.forEach(m => {
+    m.rallies.forEach(r => {
+      if (r.note) allNotes.push({ note: r.note, opponent: m.opponent, date: m.date })
+    })
+  })
+  if (allNotes.length === 0) {
+    notesPanel.style.display = 'none'
+  } else {
+    notesPanel.style.display = 'block'
+    noteEl.innerHTML = ''
+    allNotes.slice(-8).reverse().forEach(n => {
+      noteEl.innerHTML += `
+        <div class="note-row">
+          <span class="note-ico">📝</span>
+          <div>
+            <div class="note-txt">${escHtml(n.note)}</div>
+            <div class="note-src">vs ${escHtml(n.opponent)} · ${n.date}</div>
+          </div>
+        </div>`
+    })
+  }
+}
+
+function pct(a, b) { return b === 0 ? 0 : Math.round(a / b * 100) }
+function setText(id, v) { const e = document.getElementById(id); if (e) e.textContent = v }
+function setWidth(id, v) { const e = document.getElementById(id); if (e) e.style.width = v + '%' }
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+}
+
+
+/* ══════════════════════════════════════════
+   TACTICAL QUIZ — FEATURE 4
+══════════════════════════════════════════ */
+
+const QUIZ_BANK = [
+  {
+    scenario: "Your opponent has a strong forehand loop but a weak backhand. They are standing central on the table.",
+    q: "Where should you direct your next serve?",
+    options: ["Wide to their forehand", "Short to their backhand", "Long to their backhand", "Down the line to their elbow"],
+    correct: 2,
+    explanation: "A long ball to the backhand exploits their weak side AND forces them to move — harder to attack from than a short ball they can flick."
+  },
+  {
+    scenario: "You're receiving a heavy backspin serve that lands short on your backhand side.",
+    q: "What is the safest, highest-percentage receive?",
+    options: ["Topspin loop over the net", "Fast push back long", "Short push to their backhand", "Flick with heavy topspin"],
+    correct: 2,
+    explanation: "A short push to their backhand keeps the ball low, forces them into a difficult attacking position, and minimises your error risk on heavy backspin."
+  },
+  {
+    scenario: "You're 9-10 down in the 5th set. Your opponent is serving and playing very aggressively.",
+    q: "What is the best mental approach for this point?",
+    options: ["Try a risky attack to change momentum", "Play safe and wait for their mistake", "Focus only on this one point — not the score", "Call a timeout to reset"],
+    correct: 2,
+    explanation: "At match point down, narrowing focus to the present point prevents anxiety. Worrying about the score is the #1 cause of tight, error-prone play."
+  },
+  {
+    scenario: "Your opponent pushes heavily with backspin to your forehand side every time you serve short.",
+    q: "What tactical adjustment should you make?",
+    options: ["Serve long fast to stop them pushing", "Serve shorter to force a net error", "Switch to a sidespin serve to change the spin", "Stop serving to their forehand"],
+    correct: 0,
+    explanation: "A long fast serve directly disrupts their push habit — they cannot push a ball that bounces deep and fast, forcing a weaker return you can attack."
+  },
+  {
+    scenario: "You're playing a defensive chopper who gets everything back. You've lost the last 3 points trying to smash.",
+    q: "What should you change in your attacking approach?",
+    options: ["Smash harder to overpower them", "Mix heavy topspin with drop shots to the table", "Play passively and wait for their error", "Attack every ball to their forehand"],
+    correct: 1,
+    explanation: "Against choppers, variation is the weapon. A drop shot forces them to the table — the opposite of where they're comfortable — and opens the court for your next attack."
+  },
+  {
+    scenario: "Your opponent is left-handed. They are looping aggressively with their forehand from the backhand corner.",
+    q: "Where is the most effective place to attack?",
+    options: ["Their forehand wing (your left)", "Directly at their body/elbow", "Cross court to their backhand", "Short to the middle of the table"],
+    correct: 1,
+    explanation: "Attacking directly at the elbow (the junction between forehand and backhand) forces a split-second decision. Even pros struggle to play a clean stroke when jammed at the body."
+  },
+  {
+    scenario: "It's the start of the match and you have no information about your opponent's style.",
+    q: "What is the smartest opening tactic?",
+    options: ["Go all-out attack immediately", "Play passive and observe their strengths/weaknesses for 2-3 points", "Serve to their backhand every time", "Use only one serve to test their reaction"],
+    correct: 1,
+    explanation: "The first few points are intelligence-gathering. Varying serves, placement, and pace reveals their weaknesses and preferred patterns before you commit to a game plan."
+  },
+  {
+    scenario: "Your opponent is returning all your fast long serves with a strong backhand loop.",
+    q: "What serve variation will most disrupt them?",
+    options: ["Serve faster and longer", "Switch to a slow, heavy backspin short serve", "Serve to their forehand instead", "Use a no-spin serve disguised as topspin"],
+    correct: 1,
+    explanation: "The contrast matters most. Going from fast-long to slow-short-backspin forces a completely different receive technique — their timing resets and errors follow."
+  },
+  {
+    scenario: "You've won the first two sets comfortably. Your opponent calls a timeout.",
+    q: "How should you approach the third set mentally?",
+    options: ["Relax — you're nearly there", "Stay fully focused and play your game plan as if it's 0-0", "Attack more aggressively to finish quickly", "Play more defensively to protect the lead"],
+    correct: 1,
+    explanation: "Leading 2-0 is the most dangerous position in table tennis. Mentally resetting to 0-0 prevents complacency and keeps your intensity and tactics consistent."
+  },
+  {
+    scenario: "Your opponent hits a short ball to the middle of the table — you have time to choose your shot.",
+    q: "Which shot gives you the best chance of winning the point?",
+    options: ["Push it back short", "Smash cross-court", "Step around and forehand loop to their wide backhand", "Block it to their forehand"],
+    correct: 2,
+    explanation: "Stepping around to use your forehand (usually the stronger wing) on a mid-table ball lets you generate more topspin and precision. Targeting their wide backhand stretches them and opens the court."
+  },
+  {
+    scenario: "You've made 3 unforced forehand errors in a row hitting wide.",
+    q: "What is the most likely cause and fix?",
+    options: ["Swing faster to generate more spin", "Check your contact point — you may be hitting the ball too late", "Switch to playing more with your backhand", "Aim more aggressively to correct the angle"],
+    correct: 1,
+    explanation: "Wide forehand errors typically mean late contact — the ball is getting behind your strike zone. Focus on moving your feet earlier so you contact the ball in front of your body."
+  },
+  {
+    scenario: "It's 10-10 in the deciding set. You are about to serve.",
+    q: "What serve should you use?",
+    options: ["Your most disguised serve — the one they've struggled with all match", "A completely new serve they haven't seen", "A safe, easy serve to just get the ball in", "Serve fast and long to pressure them"],
+    correct: 0,
+    explanation: "Under maximum pressure, use what works — your best serve. This is not the time to experiment. Exploit the pattern you've already established during the match."
+  },
+  {
+    scenario: "Your opponent is much taller than you with long arms and a powerful smash.",
+    q: "What tactical style gives you the best chance?",
+    options: ["Match their power and smash back", "Keep the ball short and low, forcing them to the table", "Play long topspin rallies", "Target their forehand aggressively"],
+    correct: 1,
+    explanation: "Tall players with long arms struggle with short, low balls that force them to bend and play close to the table — it neutralises their reach and power advantage."
+  },
+  {
+    scenario: "You notice your opponent always moves to their backhand side after your serve.",
+    q: "What's the best way to exploit this pattern?",
+    options: ["Keep serving to their backhand", "Serve then attack immediately to their wide forehand", "Serve faster to their backhand", "Change nothing — it might be a trap"],
+    correct: 1,
+    explanation: "If they habitually move to their backhand, their forehand side is wide open. Serve to draw the movement, then attack the vacant forehand — a classic combination tactic."
+  },
+  {
+    scenario: "You're winning a rally but hit a weak, high ball to the middle of the table.",
+    q: "What should you do before your opponent smashes?",
+    options: ["Stand still and hope they miss", "Step back from the table to give yourself more time", "Move in close to block aggressively", "Call out to distract them"],
+    correct: 1,
+    explanation: "Stepping back gives you more time to react to a powerful smash, lets you read the direction, and puts you in position to use a topspin counterattack rather than panic-blocking."
+  }
+]
+
+let qzState = {
+  questions: [],
+  index: 0,
+  correct: 0,
+  wrong: 0,
+  streak: 0,
+  answered: false
+}
+
+function initQuiz() {
+  renderWeakList()
+  if (qzState.questions.length === 0) startQuiz()
+}
+
+function startQuiz() {
+  const shuffled = [...QUIZ_BANK].sort(() => Math.random() - .5).slice(0, 10)
+  qzState = { questions: shuffled, index: 0, correct: 0, wrong: 0, streak: 0, answered: false }
+  document.getElementById('quiz-card').style.display = 'block'
+  document.getElementById('quiz-end').classList.remove('show')
+  updateScoreHeader()
+  renderQuestion()
+}
+
+function renderQuestion() {
+  const q = qzState.questions[qzState.index]
+  const total = qzState.questions.length
+  const num = qzState.index + 1
+  setText('qz-num', `Question ${num} of ${total}`)
+  setText('qz-scenario', q.scenario)
+  setText('qz-question', q.q)
+  const optEl = document.getElementById('qz-options')
+  const letters = ['A','B','C','D']
+  optEl.innerHTML = q.options.map((opt, i) => `
+    <button class="quiz-opt" onclick="answerQuiz(${i})" id="qz-opt-${i}">
+      <span class="quiz-opt-letter">${letters[i]}</span>
+      ${escHtml(opt)}
+    </button>
+  `).join('')
+  const fb = document.getElementById('qz-feedback')
+  fb.className = 'quiz-feedback'
+  document.getElementById('qz-next').className = 'btn-quiz-next'
+  qzState.answered = false
+}
+
+function answerQuiz(chosen) {
+  if (qzState.answered) return
+  qzState.answered = true
+  const q = qzState.questions[qzState.index]
+  const isCorrect = chosen === q.correct
+  const letters = ['A','B','C','D']
+  for (let i = 0; i < q.options.length; i++) {
+    const btn = document.getElementById(`qz-opt-${i}`)
+    btn.disabled = true
+    if (i === q.correct) btn.classList.add('correct')
+    else if (i === chosen && !isCorrect) btn.classList.add('wrong')
+    else btn.classList.add('reveal')
+  }
+  if (isCorrect) { qzState.correct++; qzState.streak++ }
+  else { qzState.wrong++; qzState.streak = 0; saveWeakTactic(q, letters[chosen]) }
+  const fb = document.getElementById('qz-feedback')
+  const fbType = isCorrect ? 'ok' : 'fail'
+  fb.className = 'quiz-feedback show ' + fbType
+  setText('qz-fb-title', isCorrect ? '✦ Correct!' : '✕ Not quite.')
+  setText('qz-fb-body', q.explanation)
+  const saved = store.get('tt_quiz') || { correct: 0, total: 0 }
+  saved.correct += isCorrect ? 1 : 0
+  saved.total   += 1
+  store.set('tt_quiz', saved)
+  updateScoreHeader()
+  const isLast = qzState.index >= qzState.questions.length - 1
+  const nextBtn = document.getElementById('qz-next')
+  nextBtn.className = 'btn-quiz-next show'
+  nextBtn.textContent = isLast ? 'See Results →' : 'Next Question →'
+}
+
+function nextQuestion() {
+  qzState.index++
+  if (qzState.index >= qzState.questions.length) showQuizEnd()
+  else { renderQuestion(); updateScoreHeader() }
+}
+
+function updateScoreHeader() {
+  setText('qz-correct', qzState.correct)
+  setText('qz-wrong', qzState.wrong)
+  setText('qz-streak', qzState.streak + (qzState.streak >= 3 ? '🔥' : ''))
+  const answered = qzState.correct + qzState.wrong
+  const total = qzState.questions.length
+  const pctVal = total > 0 ? Math.round(answered / total * 100) : 0
+  setText('qz-prog-lbl', `Question ${Math.min(qzState.index + 1, total)} of ${total}`)
+  setText('qz-pct', Math.round(qzState.correct / Math.max(answered, 1) * 100) + '% accuracy')
+  setWidth('qz-prog-bar', pctVal)
+}
+
+function showQuizEnd() {
+  document.getElementById('quiz-card').style.display = 'none'
+  const endEl = document.getElementById('quiz-end')
+  endEl.classList.add('show')
+  const score   = qzState.correct
+  const total   = qzState.questions.length
+  const pctVal  = Math.round(score / total * 100)
+  setText('qz-end-score', `${score}/${total}`)
+  let ico, msg
+  if (pctVal >= 90)      { ico = '🏆'; msg = "Exceptional tactical IQ. You read the game like a coach." }
+  else if (pctVal >= 70) { ico = '🎯'; msg = "Solid tactical thinking. A few areas to sharpen up — check your weak tactics log." }
+  else if (pctVal >= 50) { ico = '📈'; msg = "Good foundation. Study the explanations on your wrong answers — they're the fastest path to improvement." }
+  else                   { ico = '🧠'; msg = "Tactical training mode: ON. Review your weak tactics log and hit the Drill Generator to build new habits." }
+  setText('qz-end-ico', ico)
+  setText('qz-end-msg', msg)
+  renderWeakList()
+  refreshOverviewStats()
+}
+
+function saveWeakTactic(q, chosenLetter) {
+  const weak = store.get('tt_weak_tactics') || []
+  weak.push({ scenario: q.scenario, question: q.q, yourAnswer: chosenLetter, correct: q.options[q.correct], explanation: q.explanation, ts: Date.now() })
+  store.set('tt_weak_tactics', weak)
+}
+
+function renderWeakList() {
+  const weak = store.get('tt_weak_tactics') || []
+  const listEl  = document.getElementById('weak-list')
+  const emptyEl = document.getElementById('weak-empty')
+  if (!listEl) return
+  if (weak.length === 0) {
+    listEl.innerHTML = ''
+    emptyEl.style.display = 'block'
+    return
+  }
+  emptyEl.style.display = 'none'
+  listEl.innerHTML = [...weak].reverse().slice(0, 6).map(w => `
+    <div class="weak-row">
+      <span class="weak-ico">✕</span>
+      <div class="weak-body">
+        <div class="weak-q">${escHtml(w.question)}</div>
+        <div class="weak-ans">You answered <strong>${w.yourAnswer}</strong> · Correct: <strong>${escHtml(w.correct)}</strong></div>
+        <div class="weak-ans" style="margin-top:3px;color:var(--txt2)">${escHtml(w.explanation)}</div>
+      </div>
+    </div>
+  `).join('')
+}
+
+
+/* ══════════════════════════════════════════
+   DRILL GENERATOR — FEATURE 5
+══════════════════════════════════════════ */
+
+const DRILL_DB = {
+  'backhand-errors': {
+    label: 'Backhand Consistency',
+    cues: [
+      'Keep your elbow close to your body — don\'t let it flare out',
+      'Contact the ball at the peak of the bounce, not on the way down',
+      'Follow through toward your target, not just upward',
+      'Stay square — don\'t let your body open before contact'
+    ],
+    steps: [
+      { name: 'Shadow Footwork', desc: 'Stand at the backhand corner. Perform backhand stroke shadows without a ball — focus on elbow position and hip rotation.', reps: '3 × 30 seconds', modes: ['solo','robot','partner'] },
+      { name: 'Multiball Backhand Drive', desc: 'Partner/robot feeds topspin balls to your backhand. Drive each one cross-court with controlled pace.', reps: '4 × 20 balls', modes: ['partner','robot'] },
+      { name: 'Wall Rebound Drill', desc: 'Stand 1m from a wall. Backhand drive against the wall continuously, keeping the stroke compact and consistent.', reps: '5 × 45 seconds', modes: ['solo'] },
+      { name: 'BH-to-BH Exchange', desc: 'Both players rally backhand-to-backhand cross court. Focus on placement consistency, not power.', reps: '6 × 60 seconds', modes: ['partner'] },
+      { name: 'Robot Random BH', desc: 'Set robot to deliver to your backhand with slight random variation. Focus on reading and adjusting your position before each stroke.', reps: '4 × 30 balls', modes: ['robot'] },
+      { name: 'Topspin Loop Backhand', desc: 'Focus on brushing up the back of the ball. Graze the ball, don\'t push it. Feel the grip of the rubber.', reps: '3 × 25 balls', modes: ['partner','robot'] },
+    ]
+  },
+  'forehand-errors': {
+    label: 'Forehand Consistency',
+    cues: [
+      'Rotate your hip and shoulder together — the power comes from your body, not your arm',
+      'Contact the ball in front of your body, never behind the hip',
+      'Keep your wrist loose at backswing, accelerate through contact',
+      'Land your weight on your front foot as you strike'
+    ],
+    steps: [
+      { name: 'FH Shadow Practice', desc: 'Forehand loop shadow — emphasise full hip rotation and weight transfer from back to front foot.', reps: '4 × 30 seconds', modes: ['solo','partner','robot'] },
+      { name: 'Cross-Court FH Rally', desc: 'Sustained forehand-to-forehand cross court rally at 60% pace. Count consecutive rallies — target 20+.', reps: '5 × 60 seconds', modes: ['partner'] },
+      { name: 'Multiball FH Loop', desc: 'Partner feeds backspin, you loop topspin cross court. Focus on brushing through, not hitting through.', reps: '4 × 20 balls', modes: ['partner','robot'] },
+      { name: 'Bounce-Feed Solo', desc: 'Bounce the ball yourself and drive it into the table. Check your contact point is consistently in front of your hip.', reps: '3 × 30 balls', modes: ['solo'] },
+      { name: 'Step-Around Attack', desc: 'Partner feeds to your backhand side. Step around and attack with your forehand. Reset position after each shot.', reps: '3 × 15 balls', modes: ['partner','robot'] },
+      { name: 'FH Smash High Balls', desc: 'Partner tosses high balls to your FH. Smash each one cross court and down the line alternately.', reps: '3 × 10 balls', modes: ['partner'] },
+    ]
+  },
+  'serve-receive': {
+    label: 'Serve & Receive',
+    cues: [
+      'Read the contact point, not just the ball — watch where the bat hits the ball to identify spin',
+      'Stay low and balanced when receiving — don\'t reach for the ball, move your feet',
+      'On heavy backspin, keep your bat angle open and push with forward motion to clear the net',
+      'Use a short push to backhand as your safe default receive under pressure'
+    ],
+    steps: [
+      { name: 'Serve Variation Solo', desc: 'Practise 5 different serves in sequence: backspin, topspin, no-spin, sidespin left, sidespin right. Alternate 10 of each.', reps: '50 serves total', modes: ['solo','partner','robot'] },
+      { name: 'Ghost Receive', desc: 'Partner serves. You read the spin but just shadow the receive without hitting — focus purely on spin identification.', reps: '20 serves', modes: ['partner'] },
+      { name: 'Short Push Receive', desc: 'Partner serves short backspin. You push short back to their backhand. Keep the ball low and short.', reps: '4 × 15 serves', modes: ['partner'] },
+      { name: 'Flick Receive Drill', desc: 'Partner serves short topspin or no-spin. Practise the flick receive — wrist snap, contact early.', reps: '3 × 12 serves', modes: ['partner'] },
+      { name: 'Receive + Third Ball', desc: 'You receive, partner plays third ball, you attack fourth ball. Full pattern drill.', reps: '3 × 10 patterns', modes: ['partner'] },
+      { name: 'Serve Accuracy Target', desc: 'Place a small target (tissue box) on the table. Serve to hit it. Practise different spin serves.', reps: '40 serves', modes: ['solo'] },
+    ]
+  },
+  'short-game': {
+    label: 'Short Game Mastery',
+    cues: [
+      'Keep the ball low over the net — think "just over", not "safe over"',
+      'Use your wrist, not your whole arm, for short-game touch shots',
+      'Anticipate — get your bat in position before the ball arrives',
+      'Control the depth: a ball that bounces twice on their side is a perfect short ball'
+    ],
+    steps: [
+      { name: 'Drop Shot Consistency', desc: 'Push a ball short to the very end of the table. Partner does the same. Rally short-to-short without letting the ball come long.', reps: '4 × 60 seconds', modes: ['partner'] },
+      { name: 'Short Push Solo Feed', desc: 'Hold the ball above the table and drop it. As it bounces, push it short cross-court with touch.', reps: '3 × 20 balls', modes: ['solo'] },
+      { name: 'Short-Long Variation', desc: 'Alternate: push short, push long, short, long. Partner mirrors. Forces both players to adjust depth constantly.', reps: '4 × 45 seconds', modes: ['partner'] },
+      { name: 'Flick from Short Ball', desc: 'Partner pushes short. You decide: push short back OR flick aggressively. Keep partner guessing.', reps: '3 × 15 balls', modes: ['partner','robot'] },
+      { name: 'Touch and Feel Solo', desc: 'Place the ball on your bat. Let it bounce. Then catch it on the bat. Repeat, feeling the rubber grip. Builds touch sensitivity.', reps: '3 × 30 seconds', modes: ['solo'] },
+    ]
+  },
+  'mental-pressure': {
+    label: 'Mental Toughness',
+    cues: [
+      'Reset between every point — one slow breath in, one out, then step up',
+      'When losing, change one thing tactically — never panic and change everything',
+      'Focus only on the next ball, not the score, not the last error',
+      'Pressure moments are when habits kick in — train the right habits so they\'re automatic'
+    ],
+    steps: [
+      { name: 'Pressure Point Simulation', desc: 'Play practice sets but start every game at 8-8 (deuce situation). Force yourself to play pressure points repeatedly.', reps: '5 × deuce games', modes: ['partner'] },
+      { name: 'Error Reset Ritual', desc: 'After every unforced error in training, pause. Take one breath. Say to yourself: "Next ball." Practise this response until it\'s automatic.', reps: 'Every training session', modes: ['solo','partner','robot'] },
+      { name: 'Comeback Practice', desc: 'Start every game 0-5 down. You must claw back. Focus on pattern changes and patience, not panic attacking.', reps: '4 games', modes: ['partner'] },
+      { name: 'Mindful Rally', desc: 'Rally with a partner. Say out loud where every ball is going before you hit it ("cross court", "long", "short"). Forces present-moment focus.', reps: '3 × 60 seconds', modes: ['partner'] },
+      { name: 'Serve Visualisation', desc: 'Before each serve in solo practice, close your eyes and visualise the exact serve and the opponent\'s likely return. Open eyes and execute.', reps: '20 serves', modes: ['solo','partner','robot'] },
+    ]
+  },
+  'footwork': {
+    label: 'Footwork & Movement',
+    cues: [
+      'Stay on the balls of your feet — never flat-footed',
+      'Move your feet before you move your arm — position first, stroke second',
+      'After every shot, recover to your ready position immediately',
+      'Short, quick steps are faster than big lunges — stay compact'
+    ],
+    steps: [
+      { name: 'Two-Step Side Shuffle', desc: 'Without a ball, shuffle left-right between FH and BH corners. Two quick steps each way. Keep low, stay on toes.', reps: '4 × 30 seconds', modes: ['solo','partner','robot'] },
+      { name: 'FH-BH-FH Pattern', desc: 'Partner/robot feeds: FH corner, BH corner, FH corner. You move and hit each one. Focus on recovery between shots.', reps: '4 × 15 patterns', modes: ['partner','robot'] },
+      { name: 'Wide-Wide Drill', desc: 'Partner feeds alternately wide to FH then wide to BH. You must reach and recover fully each time. No lazy footwork.', reps: '5 × 45 seconds', modes: ['partner','robot'] },
+      { name: 'Step-Around FH Attack', desc: 'Partner feeds to your BH. Step around with your right foot and attack with FH. Recover to central position. Repeat.', reps: '3 × 12 balls', modes: ['partner','robot'] },
+      { name: 'Agility Ladder Solo', desc: 'Set up cones in a T-shape around the table. Sprint to each cone and shadow a stroke before returning to center.', reps: '4 × 60 seconds', modes: ['solo'] },
+    ]
+  },
+  'attack-consistency': {
+    label: 'Attack Consistency',
+    cues: [
+      'Choose a target before you swing — random placement kills consistency',
+      'Brush the ball, don\'t punch it — topspin loops are more consistent than flat hits',
+      'Rally at 70% pace first. Speed without consistency is just showing off.',
+      'If you miss two in a row with the same shot, immediately slow down and reset'
+    ],
+    steps: [
+      { name: 'Sustained Topspin Rally', desc: 'Both players rally topspin at 60-70% pace. Count consecutive rallies. Target 30+ without an error.', reps: '5 × until break', modes: ['partner'] },
+      { name: 'Robot Consistency Set', desc: 'Set robot to medium topspin feed. Loop every ball cross court. Count consecutive clean loops.', reps: '4 × 25 balls', modes: ['robot'] },
+      { name: 'Target Zone Attack', desc: 'Place a target (towel) on the table. Attack every ball at it. Develop the habit of aiming before striking.', reps: '3 × 20 balls', modes: ['partner','robot','solo'] },
+      { name: 'Slow Deliberate Loops', desc: 'Slow everything down — half pace, half swing. Loop with maximum control and spin. Speed comes later.', reps: '4 × 15 balls', modes: ['partner','robot'] },
+      { name: 'Attack Off Backspin', desc: 'Partner pushes backspin. You loop every single one. Focus on lifting through the ball, not hitting flat.', reps: '4 × 20 balls', modes: ['partner','robot'] },
+    ]
+  },
+  'third-ball': {
+    label: '3rd Ball Attack',
+    cues: [
+      'Your serve should be designed to set up your third ball — think two shots ahead',
+      'As soon as you serve, load your stance for the attack — don\'t watch the ball passively',
+      'Attack the return before it reaches the peak of the bounce — take it early',
+      'If the return is too low or heavy, push back short rather than forcing a risky attack'
+    ],
+    steps: [
+      { name: 'Serve + Attack Pattern', desc: 'Serve backspin. Partner pushes long. You loop cross court. Repeat the pattern. Make it automatic.', reps: '4 × 15 patterns', modes: ['partner'] },
+      { name: 'Serve + Step-Around', desc: 'Serve to their backhand. They return. You step around and attack with forehand. Reset and repeat.', reps: '3 × 12 patterns', modes: ['partner'] },
+      { name: 'Shadow 3rd Ball', desc: 'Serve (alone). Then immediately shadow the 3rd ball attack as if the ball came back. Train the muscle memory of serve + ready position.', reps: '3 × 20 serves', modes: ['solo'] },
+      { name: 'Varied Return Attack', desc: 'Partner receives in two ways alternately (short push or long push). You must read which one came and adjust your attack accordingly.', reps: '3 × 20 patterns', modes: ['partner'] },
+      { name: 'Robot Serve Simulation', desc: 'Set robot to deliver to your FH/BH alternately at medium speed. Treat each ball as a 3rd ball return — attack it immediately.', reps: '4 × 20 balls', modes: ['robot'] },
+    ]
+  }
+}
+
+const drillPicks = { weakness: null, mode: 'solo', intensity: 'medium' }
+
+function drillPick(group, el) {
+  el.closest('.drill-tag-row').querySelectorAll('.drill-tag').forEach(t => t.classList.remove('on'))
+  el.classList.add('on')
+  drillPicks[group] = el.dataset.val
+}
+
+function generateDrill() {
+  if (!drillPicks.weakness) {
+    const wk = document.getElementById('drg-weakness')
+    wk.style.outline = '2px solid var(--red)'
+    setTimeout(() => wk.style.outline = 'none', 1500)
+    return
+  }
+  const time      = parseInt(document.getElementById('drg-time').value)
+  const mode      = drillPicks.mode || 'solo'
+  const intensity = drillPicks.intensity || 'medium'
+  const weakness  = drillPicks.weakness
+  const db        = DRILL_DB[weakness]
+  let steps = db.steps.filter(s => s.modes.includes(mode))
+  const maxSteps = time <= 15 ? 2 : time <= 30 ? 3 : time <= 45 ? 4 : time <= 60 ? 5 : 6
+  steps = steps.slice(0, maxSteps)
+  const outputEl = document.getElementById('drill-output')
+  outputEl.innerHTML = `
+    <div class="drill-plan">
+      <div class="drill-plan-header">
+        <div>
+          <div class="drill-plan-title">${db.label} Drill Plan</div>
+          <div class="drill-plan-meta">
+            <span class="drill-meta-tag">⏱ ${time} min</span>
+            <span class="drill-meta-tag">👤 ${mode.charAt(0).toUpperCase()+mode.slice(1)}</span>
+            <span class="drill-meta-tag">🔥 ${intensity.charAt(0).toUpperCase()+intensity.slice(1)}</span>
+            <span class="drill-meta-tag">${steps.length} drills</span>
+          </div>
+        </div>
+        <button class="btn-save-drill" onclick="saveDrillPlan('${weakness}', '${mode}', ${time}, '${intensity}')">Save Plan</button>
+      </div>
+      <div class="drill-steps">
+        ${steps.map((s, i) => `
+          <div class="drill-step">
+            <div class="drill-step-num">${i+1}</div>
+            <div class="drill-step-body">
+              <div class="drill-step-name">${s.name}</div>
+              <div class="drill-step-desc">${s.desc}</div>
+              <div class="drill-step-tags">
+                <span class="drill-step-tag reps">${s.reps}</span>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="drill-cue-box">
+        <div class="drill-cue-title">🎯 Coaching Cues — ${db.label}</div>
+        <div class="drill-cue-list">
+          ${db.cues.map(c => `<div class="drill-cue-item">${c}</div>`).join('')}
+        </div>
+      </div>
+    </div>
+  `
+}
+
+function saveDrillPlan(weakness, mode, time, intensity) {
+  const db = DRILL_DB[weakness]
+  const saved = store.get('tt_saved_drills') || []
+  saved.push({ id: Date.now(), label: db.label, weakness, mode, time, intensity, date: new Date().toISOString().split('T')[0] })
+  store.set('tt_saved_drills', saved)
+  store.set('tt_drills_done', (store.get('tt_drills_done') || 0) + 1)
+  refreshOverviewStats()
+  renderSavedDrills()
+}
+
+function renderSavedDrills() {
+  const saved   = store.get('tt_saved_drills') || []
+  const listEl  = document.getElementById('saved-drills-list')
+  const emptyEl = document.getElementById('saved-drills-empty')
+  if (!listEl) return
+  if (saved.length === 0) {
+    listEl.innerHTML = ''
+    emptyEl.style.display = 'block'
+    return
+  }
+  emptyEl.style.display = 'none'
+  listEl.innerHTML = [...saved].reverse().map(d => `
+    <div class="saved-drill-row">
+      <div>
+        <div class="saved-drill-name">${d.label}</div>
+        <div class="saved-drill-meta">⏱ ${d.time} min · ${d.mode} · ${d.intensity} · ${d.date}</div>
+      </div>
+      <button class="saved-drill-del" onclick="deleteSavedDrill(${d.id})">Delete</button>
+    </div>
+  `).join('')
+}
+
+function deleteSavedDrill(id) {
+  const saved = (store.get('tt_saved_drills') || []).filter(d => d.id !== id)
+  store.set('tt_saved_drills', saved)
+  renderSavedDrills()
+}
+
+function initDrills() {
+  renderSavedDrills()
+}
+
+
+/* ══════════════════════════════════════════
+   COACH MA — AI ANALYSIS ENGINE
+══════════════════════════════════════════ */
+
+let coachMode = 'video'
+
+function switchCoachMode(mode) {
+  coachMode = mode
+  document.getElementById('ctab-video').classList.toggle('on', mode === 'video')
+  document.getElementById('ctab-rally').classList.toggle('on', mode === 'rally')
+  document.getElementById('cpanel-video').classList.toggle('on', mode === 'video')
+  document.getElementById('cpanel-rally').classList.toggle('on', mode === 'rally')
+  document.getElementById('coach-response').classList.remove('show')
+  document.getElementById('coach-loading').classList.remove('show')
+}
+
+function loadYouTube() {
+  const url = document.getElementById('yt-url').value.trim()
+  if (!url) return
+  const patterns = [
+    /youtube\.com\/watch\?v=([^&]+)/,
+    /youtu\.be\/([^?&]+)/,
+    /youtube\.com\/embed\/([^?&]+)/,
+    /youtube\.com\/shorts\/([^?&]+)/
+  ]
+  let videoId = null
+  for (const p of patterns) {
+    const m = url.match(p)
+    if (m) { videoId = m[1]; break }
+  }
+  if (!videoId) { alert('Could not find a valid YouTube video ID. Please check the URL.'); return }
+  const wrap = document.getElementById('yt-embed-wrap')
+  const iframe = document.getElementById('yt-iframe')
+  iframe.src = `https://www.youtube.com/embed/${videoId}`
+  wrap.classList.add('show')
+  wrap.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+function fillDebrief(el) {
+  document.getElementById('debrief-input').value = el.textContent.trim()
+  document.getElementById('debrief-input').focus()
+}
+
+function buildSystemPrompt() {
+  return `You are Coach Ma — the most demanding, precise, and effective table tennis analyst in the world. You think and coach like the Chinese national team coaching staff: methodical, pattern-focused, technically exact, and brutally honest.
+
+Your coaching philosophy:
+- Every error has a root cause. Find it. Name it. Fix it with specifics.
+- Tactical patterns are everything. You see what opponents are doing before the player does.
+- Mental weakness is a technical problem — it has specific causes and specific fixes.
+- Never give generic advice. Every comment must be specific to what the player described.
+- You respect effort but never excuse avoidable errors or lazy thinking.
+- Your language is direct, authoritative, and precise. Like a coach who has produced world champions.
+
+You respond in clearly structured sections using this format exactly:
+[DIAGNOSIS] — What is actually happening and why
+[CRITICAL ISSUES] — The 2-3 most important problems to fix immediately  
+[WHAT YOU DID WELL] — Honest positives (only real ones, not empty praise)
+[TACTICAL ADJUSTMENTS] — Specific tactical changes for the next match
+[MENTAL NOTES] — Psychological patterns and fixes
+[TRAINING PRESCRIPTION] — Exactly what to practise and how
+[COACH MA'S VERDICT] — One sharp, memorable closing statement
+
+Be specific, technical, and direct. This player is serious about improvement.`
+}
+
+async function callCoachMa(userMessage) {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1500,
+      system: buildSystemPrompt(),
+      messages: [{ role: 'user', content: userMessage }]
+    })
+  })
+  if (!response.ok) throw new Error(`API error: ${response.status}`)
+  const data = await response.json()
+  return data.content[0].text
+}
+
+function parseCoachResponse(text) {
+  const sections = [
+    { key: 'DIAGNOSIS',           label: 'Diagnosis',              ico: '🔍', cls: 'neutral' },
+    { key: 'CRITICAL ISSUES',     label: 'Critical Issues',        ico: '⚠️', cls: 'critical' },
+    { key: 'WHAT YOU DID WELL',   label: 'What You Did Well',      ico: '✦',  cls: 'good' },
+    { key: 'TACTICAL ADJUSTMENTS',label: 'Tactical Adjustments',   ico: '◈',  cls: 'neutral' },
+    { key: 'MENTAL NOTES',        label: 'Mental Notes',           ico: '🧠', cls: 'neutral' },
+    { key: 'TRAINING PRESCRIPTION',label:'Training Prescription',  ico: '▸',  cls: 'neutral' },
+    { key: 'COACH MA\'S VERDICT', label: 'Coach Ma\'s Verdict',    ico: '🏓', cls: 'good' },
+  ]
+  let html = ''
+  sections.forEach((sec, i) => {
+    const startTag  = `[${sec.key}]`
+    const nextKeys  = sections.slice(i + 1).map(s => `[${s.key}]`)
+    const startIdx  = text.indexOf(startTag)
+    if (startIdx === -1) return
+    let endIdx = text.length
+    for (const nk of nextKeys) {
+      const ni = text.indexOf(nk, startIdx)
+      if (ni !== -1 && ni < endIdx) endIdx = ni
+    }
+    let body = text.slice(startIdx + startTag.length, endIdx).trim()
+    body = body.replace(/^[\-–—]\s*/, '')
+    const lines = body.split('\n').filter(l => l.trim())
+    let inner = ''
+    lines.forEach(line => {
+      const clean = line.replace(/^[-•*]\s*/, '').trim()
+      if (!clean) return
+      const isBad = sec.cls === 'critical'
+      const isFix = sec.key === 'TACTICAL ADJUSTMENTS' || sec.key === 'TRAINING PRESCRIPTION'
+      const cls   = isBad ? 'bad' : isFix ? 'fix' : ''
+      if (lines.length > 1) {
+        inner += `<div class="report-list-item ${cls}">${escHtml(clean)}</div>`
+      } else {
+        inner += `<p class="report-text">${escHtml(clean)}</p>`
+      }
+    })
+    if (lines.length > 1) inner = `<div class="report-list">${inner}</div>`
+    html += `
+      <div class="report-block ${sec.cls}">
+        <div class="report-block-title">
+          <span class="report-block-title-ico">${sec.ico}</span>
+          ${sec.label}
+        </div>
+        ${inner}
+      </div>`
+  })
+  if (!html) {
+    html = `<div class="report-block neutral"><div class="report-text">${escHtml(text).replace(/\n/g,'<br>')}</div></div>`
+  }
+  return html
+}
+
+async function analyseMatch() {
+  const result  = document.getElementById('obs-result').value
+  const style   = document.getElementById('obs-style').value
+  const serve   = document.getElementById('obs-serve').value.trim()
+  const rallies = document.getElementById('obs-rallies').value.trim()
+  const mental  = document.getElementById('obs-mental').value.trim()
+  const opp     = document.getElementById('obs-opp').value.trim()
+  const other   = document.getElementById('obs-other').value.trim()
+  const ytUrl   = document.getElementById('yt-url').value.trim()
+  if (!serve && !rallies) {
+    alert('Please fill in at least your serve patterns and rally observations before requesting analysis.')
+    return
+  }
+  const userMsg = `MATCH VIDEO ANALYSIS REQUEST
+
+${ytUrl ? `Match video: ${ytUrl}` : 'No video link provided — analysis based on observations only.'}
+
+Match Result: ${result || 'Not specified'}
+Opponent Style: ${style || 'Not specified'}
+
+SERVE PATTERNS:
+${serve || 'Not described'}
+
+RALLY PATTERNS:
+${rallies || 'Not described'}
+
+MENTAL MOMENTS:
+${mental || 'Not described'}
+
+OPPONENT WEAKNESSES NOTICED:
+${opp || 'Not described'}
+
+OTHER NOTES:
+${other || 'Not described'}
+
+Analyse this match completely. Be specific and direct. I want to know exactly what I need to fix.`
+
+  await runAnalysis(userMsg, 'Match Video Analysis')
+}
+
+async function analyseRally() {
+  const text = document.getElementById('debrief-input').value.trim()
+  if (!text) { alert('Please describe the situation or rally before requesting analysis.'); return }
+  const userMsg = `RALLY / SITUATION DEBRIEF REQUEST
+
+${text}
+
+Analyse this situation completely. Give me the root cause, the tactical fix, and what I need to practise.`
+  await runAnalysis(userMsg, 'Rally Debrief')
+}
+
+async function runAnalysis(userMsg, label) {
+  const loadEl = document.getElementById('coach-loading')
+  const respEl = document.getElementById('coach-response')
+  const repEl  = document.getElementById('coach-report')
+  const subEl  = document.getElementById('coach-response-sub')
+  loadEl.classList.add('show')
+  respEl.classList.remove('show')
+  document.getElementById('btn-analyse-video').disabled = true
+  document.getElementById('btn-analyse-rally').disabled = true
+  try {
+    const raw  = await callCoachMa(userMsg)
+    const html = parseCoachResponse(raw)
+    repEl.innerHTML = html
+    subEl.textContent = label + ' — ' + new Date().toLocaleTimeString()
+    loadEl.classList.remove('show')
+    respEl.classList.add('show')
+    respEl.scrollIntoView({ behavior:'smooth', block:'start' })
+    saveAnalysisHistory(label, userMsg.slice(0, 120), raw)
+    renderCoachHistory()
+  } catch (err) {
+    loadEl.classList.remove('show')
+    repEl.innerHTML = `<div class="report-block critical">
+      <div class="report-block-title">⚠️ Connection Error</div>
+      <p class="report-text">Could not reach the analysis engine. Check your internet connection and try again.<br/><br/>
+      <strong>Error:</strong> ${escHtml(err.message)}</p>
+    </div>`
+    respEl.classList.add('show')
+  } finally {
+    document.getElementById('btn-analyse-video').disabled = false
+    document.getElementById('btn-analyse-rally').disabled = false
+  }
+}
+
+function saveAnalysisHistory(label, preview, response) {
+  const hist = store.get('tt_coach_history') || []
+  hist.push({ id: Date.now(), label, preview: preview.replace(/\n/g,' ').slice(0, 100), response, date: new Date().toLocaleDateString() })
+  if (hist.length > 10) hist.splice(0, hist.length - 10)
+  store.set('tt_coach_history', hist)
+}
+
+function renderCoachHistory() {
+  const hist    = store.get('tt_coach_history') || []
+  const listEl  = document.getElementById('coach-history-list')
+  const emptyEl = document.getElementById('coach-history-empty')
+  if (!listEl) return
+  if (hist.length === 0) {
+    listEl.innerHTML = ''
+    emptyEl.style.display = 'block'
+    return
+  }
+  emptyEl.style.display = 'none'
+  listEl.innerHTML = [...hist].reverse().slice(0, 5).map(h => `
+    <div class="history-item" onclick="restoreAnalysis(${h.id})">
+      <div class="history-item-left">
+        <span class="history-item-type">${escHtml(h.label)}</span>
+        <span class="history-item-preview">${escHtml(h.preview)}…</span>
+      </div>
+      <span class="history-item-date">${h.date}</span>
+    </div>
+  `).join('')
+}
+
+function restoreAnalysis(id) {
+  const hist = store.get('tt_coach_history') || []
+  const item = hist.find(h => h.id === id)
+  if (!item) return
+  const repEl  = document.getElementById('coach-report')
+  const respEl = document.getElementById('coach-response')
+  const subEl  = document.getElementById('coach-response-sub')
+  repEl.innerHTML = parseCoachResponse(item.response)
+  subEl.textContent = item.label + ' — ' + item.date
+  respEl.classList.add('show')
+  respEl.scrollIntoView({ behavior:'smooth', block:'start' })
+}
+
+function initCoach() {
+  renderCoachHistory()
+}
+
+</script>
+</body>
+</html>
